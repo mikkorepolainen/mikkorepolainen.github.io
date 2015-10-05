@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Virtual Host Setup With KVM
+description: This post describes the installation of a KVM virtualization environment on a Lenovo ThinkServer TS140
 modified: 2015-02-26 00:00:00
 permalink: virtual-host-setup-with-kvm
 relativeroot: ../
@@ -8,7 +9,7 @@ relativeroot: ../
 Virtual Host Setup With KVM
 ====================
 
-This post describes the installation of a KVM virtualization environment on a Lenovo ThinkServer TS140.
+{{ page.description }}
 
 [qemu-system-x86_64](http://manpages.ubuntu.com/manpages/trusty/en/man1/qemu-system-x86_64.1.html)  
 [virt-install](http://manpages.ubuntu.com/manpages/trusty/en/man1/virt-install.1.html "test")  

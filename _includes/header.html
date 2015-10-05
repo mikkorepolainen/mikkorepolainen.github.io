@@ -1,9 +1,43 @@
-<!--<div class="top-bar">&nbsp;</div>-->
 <header>
-    <div class="container">
-		<div class="page-header">
-			<p style="font-size: xx-large">Repolainen</p>
-			{% if page.title %}<p style="font-size: x-large">{{ page.title }}</p>{% endif %}
-		</div>
-	</div>
+  <div class="row">
+    <div class="large-12 columns">
+
+      <nav class="top-bar" data-topbar>
+        <ul class="title-area">
+          <li class="name">
+            <h1>
+              <a href="{{page.relativeroot}}">Mikko Repolainen</a>
+            </h1>
+          </li>
+          <li class="toggle-topbar menu-icon"><a href="#"></a></li>
+        </ul>
+
+        <section class="top-bar-section">
+          <!--
+          <ul class="left">
+            <li><a href="#">Link 1</a></li>
+            <li><a href="#">Link 2</a></li>
+          </ul>
+          -->
+          <!--				
+          <ul class="right">
+            <li class="search">
+              <form>
+                <input type="search">
+              </form>
+            </li>
+
+            <li class="has-button">
+              <a class="small button" href="#">Search</a>
+            </li>
+          </ul>
+          -->
+        </section>
+      </nav>
+      <div class="panel">
+        <p>{% if page.title %}<strong>{{ page.title }}</strong><br />{% endif %}
+          {{ page.description }}</p>
+      </div>
+    </div>
+  </div>
 </header>

@@ -1,9 +1,10 @@
 ---
 layout: default
-title: Index
+title: Mikko Repolainen
+description: This is the personal website of Mikko Repolainen. You'll find mostly IT-related stuff here in the format of articles and notes-to-self.
 relativeroot: 
 ---
-<p>{{ page.title }}</p>
+<h1>Posts</h1>
 {% for post in site.posts %}	
     <p><a href="{{ post.url  | remove_first:'/' }}">{{ post.title }}</a> {{ post.modified | date: "%Y-%m-%d" }} {% if post.category %} <small>{{ post.category }}</small>{% endif %}</p>			
 {% endfor %}
