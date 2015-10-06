@@ -35,8 +35,11 @@
         </section>
       </nav>
       <div class="panel">
-        <p>{% if page.title %}<strong>{{ page.title }}</strong><br />{% endif %}
-          {{ page.description }}</p>
+        {% if page.title %}<p>
+           <strong>{{ page.title }}</strong>
+           {% if page.modified %}<span style="float:right; color: #999; font-size: small;">Last Modified: {{ page.modified | date: "%Y-%m-%d" }}</span>{% endif %}
+        </p>{% endif %}
+        {% if page.description %}<p>{{ page.description }}</p>{% endif %}
       </div>
     </div>
   </div>

@@ -1,128 +1,200 @@
 ---
 layout: default
-title: Virtual Host Setup With KVM
-description: This post describes the installation of a KVM virtualization environment on a Lenovo ThinkServer TS140
-modified: 2015-02-26 00:00:00
-permalink: virtual-host-setup-with-kvm
+title: Virtualization With KVM
+description: Installing and using a KVM virtualization environment on a Lenovo ThinkServer TS140 with Ubuntu 14.04 LTS
+modified: 2015-10-07 01:22:00
+permalink: virtualization-with-kvm
 relativeroot: ../
 ---
-Virtual Host Setup With KVM
+{{ page.title }}
 ====================
 
-{{ page.description }}
+This document contains the steps required for installing and configuring a KVM host server
+on a Lenovo ThinkServer TS140 with Ubuntu Server 14.04 LTS,
+for use as virtualized development lab environment.
+The main requirements were exposing all virtual machines to the local area network (bridged networking)
+and being able to connect to the host from windows machines using the Remote Desktop Protocol.
 
-[qemu-system-x86_64](http://manpages.ubuntu.com/manpages/trusty/en/man1/qemu-system-x86_64.1.html)  
-[virt-install](http://manpages.ubuntu.com/manpages/trusty/en/man1/virt-install.1.html "test")  
-[virsh](http://manpages.ubuntu.com/manpages/trusty/en/man1/virsh.1.html)  
-[virt-clone](http://manpages.ubuntu.com/manpages/trusty/man1/virt-clone.1.html)
+Contents
+----------
+- [Hardware & BIOS Setup](#hw)
+- [Operating System](#os)
+- [Remote Desktop Connectivity](#rdp)
+- [KVM Installation & Host Configuration](#kvm-inst)
+- [Creating KVM Guests (Domains)](#kvm-hosts)
+- [Managing KVM Guests](#kvm-management)
+
+<a name="hw"></a>Hardware & BIOS Setup
+--------------
+- BIOS upgrade using a bootable DOS usb stick. Without the BIOS upgrade, system boot invariably failed if an external USB FDD was attached.
+- Boot to BIOS. There's also an option to use an EasySetup disk, but apparently it's only useful when installing a windows OS or VMware ESXi.
+- Enable virtualization extensions in CPU setup (VT)
+- Enable VT-d as well if direct exclusive device assignment to guests is needed
+(see [here](http://www.linux-kvm.org/page/How_to_assign_devices_with_VT-d_in_KVM)).
 {: #an_id .a_class .b_class }
 
-Virtual host installation
+<a name="os"></a>Operating System
 -------------------------
 
-- BIOS upgrade using a bootable DOS usb stick (otherwise wouldn't boot with an USB FDD attached)
-- Booted to BIOS (There's not much use for EasySetup disk unless installing a windows OS or VMware ESXi)
-- Enabled virtualization extensions in CPU setup (VT)
-- Enabled VT-d as well in case want to try something (direct exclusive device assignment to guests, see http://www.linux-kvm.org/page/How_to_assign_devices_with_VT-d_in_KVM)
+Install Ubuntu Server 14.04 LTS
 
-- Install Ubuntu Server 14.04 (14.10 installed but wouldn't boot on old hardware so using the LTS version now even though hardware upgraded)
-- Selected Basic Ubuntu Server, OpenSSH server, Gnome Desktop (turns out should have selected xfce instead of gnome)
-- Left kvm unselected to see if there's a difference when installing through apt-get
+- Basic Ubuntu Server
+- OpenSSH server
+- Xfce if planning to use RDP (gnome does not work well with RDP)
+- KVM is left unselected in this phase and installed through apt-get later
 
-Basic connectivity
-------------------
-
-- apt-get install ssh (if OpenSSH server not selected in install phase).
-- apt-get install xrdp, connect from windows machine using Remote Desktop Connection (Module sesman-Xvnc)
-- Apparently xrdp to 14.04 doesn't work with any other window manager but xfce, so followed these instructions http://www.tweaking4all.com/software/linux-software/use-xrdp-remote-access-ubuntu-14-04/
-{% highlight bash linenos %}
-	apt-get install xfce4
-	modified /etc/xrdp/startwm.sh to start xfce4 session instead of gnome
-		#!/bin/sh
-
-		if [ -r /etc/default/locale ]; then
-			. /etc/default/locale
-			export LANG LANGUAGE
-		fi
-
-		startxfce4
-{% endhighlight %}
---- No need to modify ~/.xsession (local X session) to get remote desktop connection to work
-- Xrdp key map is not picked up by default from the server (at least not the Finnish layout), following instructions here http://askubuntu.com/questions/290453/xrdp-with-finnish-keyboard
-{% highlight bash linenos %}
-	cp /etc/xrdp/km-041d.ini /etc/xrdp/km-040b.ini
-{% endhighlight %}
----	This copies the swedish keyboard layout as the finnish layout. Logging out and back in with remote desktop gives the correct key mappings.
----	No need to run "setxkbmap -layout fi" on local X session if correct layout set when installing (don't know how to get this working for purchased cloud servers though)
-- If tab autocomplete doesn't work in xterm in an xfce session over xrdp, then edit the following file
-{% highlight bash linenos %}
-	~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml
-	Change <property name="&lt;Super&gt;Tab" type="string" value="switch_window_key"/>
-	to <property name="&lt;Super&gt;Tab" type="empty"/>
-{% endhighlight %}
-	
-KVM Installation & host configuration
--------------------------------------
-
-http://www.linux-kvm.org/page/HOWTO1
-https://help.ubuntu.com/community/KVM/Installation
-http://xmodulo.com/use-kvm-command-line-debian-ubuntu.html
-http://www.dedoimedo.com/computers/kvm-intro.html
-http://fedoraproject.org/wiki/How_to_debug_Virtualization_problems
-
-Checking hardware virtualization support
-	egrep '(vmx|svm)' --color /proc/cpuinfo --> should display vmx or svm in red
-	egrep -c '(vmx|svm)' /proc/cpuinfo --> should give non-zero result
-	kvm-ok --> should give message saying
-		INFO: /dev/kvm exists
-		KVM acceleration can be used
-	virt-host-validate --> should give message
-		QEMU: Checking for hardware virtualization		: PASS
-		QEMU: Checking for device /dev/kvm				: PASS
-		QEMU: Checking for device /dev/vhost-net		: PASS
-		QEMU: Checking for device /dev/net/tun			: PASS
-		 LXC: Checking for Linux >= 2.6.26				: PASS
-	lsmod | grep kvm --> should list either kvm_intel or kvm_amd
-KVM and command line management tools (http://xmodulo.com/use-kvm-command-line-debian-ubuntu.html)
-	ubuntu-virt-server
-		qemu-kvm
-		libvirt-bin
-		openssh-server
-	current user is added to libvirtd group -> use "adduser <user> libvirtd" to add other users if necessary (log out and back in)
-Additional packages
-	bridge-utils to manage bridged networking(brctl etc.)
-	ubuntu-vm-builder (one option for building virtual machines)
-	ubuntu-virt-mgmt
-		virt-viewer (for viewing vms)
-		virt-manager (GUI for VM management)
-	virtinst (included in some of the packages before?)
-Setup bridge for VM networking
-	KVM networking in https://help.ubuntu.com/community/KVM/Networking
-	and http://www.linux-kvm.org/page/Networking
-	TODO bridge.png from http://hzqtc.github.io/2012/02/kvm-network-bridging.html
-	apt-get install bridge-utils if not installed
-	If network manager is in use, you may want to disable it (not necessary though).
-		http://xmodulo.com/disable-network-manager-linux.html
-		check: nmcli dev status --> device name in this case is em1 (this was a surprise but it seems biosdevname naming for network interfaces has changed so that mobo integrated interfaces are named from em1 upwards)
-		stop network-manager --> don't do this unless on a local session, kills the network connectivity entirely
-		echo "manual" | sudo tee /etc/init/network-manager.override
-	edit /etc/network/interfaces --> disable primary interface (eth0/em1) unless controlled by network manager (no problem if it is), add bridge (with primary interface as bridged port)
-		auto br0
-		iface br0 inet dhcp
-				bridge_ports em1
-				bridge_stp off
-				bridge_fd 0
-				bridge_maxwait 0
-	restart networking and check results
-		/etc/init.d/networking restart
-		ifconfig --> should show br0 with a valid ip address
-		brctl show --> should show br0 connected to interface em1 and another bridge virbr0 (kvm private networking bridge, none of our concern here)
-		nmcli dev status should show em1 as unmanaged (even without disabling network manager)
-					--> after starting a guest vm, a virtual interface should show on the bridge as well (e.g. vnet0)
-		
+<a name="rdp"></a>Remote Desktop Connectivity
 ----------------------
 
-Creating KVM Guests (domains)
+###Remote Desktop Server and Window Manager
+
+Install xrdp and xfce (unless already installed).
+Apparently xrdp to Ubuntu 14.04 doesn't work with any other window manager except xfce.
+More detailed instructions [here](http://www.tweaking4all.com/software/linux-software/use-xrdp-remote-access-ubuntu-14-04/).
+
+{% highlight bash %}
+apt-get install xrdp
+apt-get install xfce4
+{% endhighlight %}
+
+If you installed another window manager at first, modify `/etc/xrdp/startwm.sh` to start xfce4 session instead:
+
+{% highlight bash %}
+#!/bin/sh  
+
+if [ -r /etc/default/locale ]; then
+  . /etc/default/locale
+  export LANG LANGUAGE
+fi
+
+startxfce4
+{% endhighlight %}
+This way there's no need to modify `~/.xsession` (local X session) to get remote desktop connection to work
+
+Connect using a remote desktop client (Module sesman-Xvnc).
+
+###Keyboard Mappings
+
+The Xrdp key map is not picked up by default from the server if using an "exotic" keyboard layout (like finnish) on the server.
+
+For finnish keyboard layout, copy the swedish keyboard layout as the finnish layout:  
+`cp /etc/xrdp/km-041d.ini /etc/xrdp/km-040b.ini`.  
+Logging out and back in with remote desktop should give the correct default key mappings automatically after this.
+
+If the above does not work automatically, or if using a different keyboard layout than on the server, you need to run `setxkbmap -layout fi` on the local X session each time.
+<span class="marker">TODO</span> Can configure in `~/.xsession`? Would be useful for managed cloud servers where server keyboard layout cannot be changed.
+
+More detailed instructions [here](http://askubuntu.com/questions/290453/xrdp-with-finnish-keyboard).
+
+###XTerm Autocomplete
+
+If tab autocomplete doesn't work in xterm in an xfce session over xrdp, then edit the following file:  
+`~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml`.
+
+Change  
+`<property name="&lt;Super&gt;Tab" type="string" value="switch_window_key"/>`  
+to  
+`<property name="&lt;Super&gt;Tab" type="empty"/>`
+
+<a name="kvm-inst"></a>KVM Installation & Host Configuration
+-------------------------------------
+
+###Resources
+
+- [KVM HOWTO](http://www.linux-kvm.org/page/HOWTO1)
+- [KVM Installation](https://help.ubuntu.com/community/KVM/Installation)
+- [KVM Command Line](http://xmodulo.com/use-kvm-command-line-debian-ubuntu.html)
+- [KVM Intro](http://www.dedoimedo.com/computers/kvm-intro.html)
+- [How to Debug Virtualization problems](http://fedoraproject.org/wiki/How_to_debug_Virtualization_problems)
+- [KVM Networking (Ubuntu)](https://help.ubuntu.com/community/KVM/Networking)
+- [KVM Networking](http://www.linux-kvm.org/page/Networking)
+- [KVM Network Bridging](http://hzqtc.github.io/2012/02/kvm-network-bridging.html)
+
+###Checking Hardware Virtualization Support
+
+`egrep '(vmx|svm)' --color /proc/cpuinfo` should display vmx or svm in red.
+
+`egrep -c '(vmx|svm)' /proc/cpuinfo` should give non-zero result.
+
+`kvm-ok` should give message saying:
+
+> INFO: /dev/kvm exists  
+> KVM acceleration can be used
+
+`virt-host-validate` should give message:
+
+> QEMU: Checking for hardware virtualization		: PASS  
+> QEMU: Checking for device /dev/kvm				: PASS  
+> QEMU: Checking for device /dev/vhost-net		: PASS  
+> QEMU: Checking for device /dev/net/tun			: PASS  
+> LXC: Checking for Linux >= 2.6.26				: PASS
+
+`lsmod | grep kvm` should list either kvm_intel or kvm_amd
+
+###Installing KVM and Command Line Management Tools
+
+Install the following packages using apt-get:
+
+- `ubuntu-virt-server` metapackage that contains:
+	- `qemu-kvm`
+	- `libvirt-bin`
+	- `openssh-server`
+- `bridge-utils` to manage bridged networking (brctl etc.)
+- `ubuntu-vm-builder` (one option for building virtual machines)
+- `ubuntu-virt-mgmt` metapackage that contains:
+	- `virt-viewer` (for viewing vms)
+	- `virt-manager` (GUI for VM management)
+- `virtinst` (<span class="marker">TODO</span> Included in some of the packages before?)
+
+The current user is added to libvirtd group automatically. Use `adduser <user> libvirtd` to add other users if necessary (log out and back in).
+
+###Setup Bridge for VM Networking
+
+Setting up the bridge requires the bridge-utils package installed in the previous section.
+The bridge connects the virtual machines' virtual interfaces directly to the local area network
+through the host server's primary network interface as if the virtual machines were
+physically present in the local area network along with the host.
+
+![Bridge from from http://hzqtc.github.io/2012/02/kvm-network-bridging.html]({{page.relativeroot}}/images/kvm-virtualization-bridge.png)
+
+If network manager is in use, you may want to [disable it](http://xmodulo.com/disable-network-manager-linux.html) before continuing (not necessary though).
+
+Check the device name of the primary network interface using `nmcli dev status`.
+The device name in this case is em1 (biosdevname naming for integrated network interfaces).
+
+On a local session, run `stop network-manager` (don't do this unless on a local session, kills the network connectivity entirely)
+and `echo "manual" | sudo tee /etc/init/network-manager.override`
+
+Edit `/etc/network/interfaces` to disable primary interface (eth0/em1) unless controlled by network manager (no problem if it is), add bridge (with primary interface as bridged port)
+
+{% highlight bash %}
+auto br0
+iface br0 inet dhcp
+    bridge_ports em1
+    bridge_stp off
+    bridge_fd 0
+    bridge_maxwait 0
+{% endhighlight %}
+
+Restart networking `/etc/init.d/networking restart`
+
+`ifconfig` should show br0 with a valid ip address
+
+`brctl show` should show br0 connected to interface em1 and another bridge virbr0 (kvm private networking bridge, none of our concern here)
+
+`nmcli dev status` should show em1 as unmanaged (even without disabling network manager)
+
+After starting a guest vm, a virtual interface should show on the bridge as well (e.g. vnet0)
+
+<a name="#kvm-hosts"></a>Creating KVM Guests (Domains)
+----------------------
+
+**man pages:**
+
+- [qemu-system-x86_64](http://manpages.ubuntu.com/manpages/trusty/en/man1/qemu-system-x86_64.1.html)
+- [virt-install](http://manpages.ubuntu.com/manpages/trusty/en/man1/virt-install.1.html "test")
+- [virsh](http://manpages.ubuntu.com/manpages/trusty/en/man1/virsh.1.html)
+- [virt-clone](http://manpages.ubuntu.com/manpages/trusty/man1/virt-clone.1.html)
 
 http://www.linux-kvm.org/page/HOWTO1
 http://www.dedoimedo.com/computers/kvm-intro.html
@@ -235,9 +307,8 @@ Running an image
 		-net nic,vlan=0,macaddr=00:00:10:52:37:48 -net tap,vlan=0,ifname=tap0,script=no
 	TODO find ip of new guest https://rwmj.wordpress.com/2010/10/26/tip-find-the-ip-address-of-a-virtual-machine/
 
+<a name="kvm-management"></a>Managing KVM Guests
 ----------------------
-
-Managing KVM Guests
 
 TODO kvm management tools http://www.linux-kvm.org/page/Management_Tools
 http://xmodulo.com/use-kvm-command-line-debian-ubuntu.html
