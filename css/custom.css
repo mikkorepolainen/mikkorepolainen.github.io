@@ -1,18 +1,58 @@
+main *{
+  font-family: Verdana, Geneva, sans-serif;
+}
+
 div.highlight {
   background-color: #f8f8f8;
   border-color: #dfdfdf;
   border-style: solid;
-  border-width: 1px;
+  border-width: 2px;
   padding: 0.125rem 0.3125rem 0.0625rem;
   margin-bottom: 1.25rem;
 }
-div.highlight pre code {
+
+div.highlight pre code{
   background-color: transparent;
   border-color: transparent;
   border-style: none;
   border-width: 0px;
   padding: 0.0rem 0.0rem 0.0rem 0.0rem;  
 }
-.marker {
+
+code, code *{
+  font-family: monospace;
+}
+
+mark,.marker {
   background-color: yellow;
+}
+
+blockquote.note::before
+{
+  content: "NOTE";
+  font-weight: bold;
+}
+blockquote.note
+{
+  padding-top: 0.0rem;
+}
+
+blockquote.terminal
+{
+  padding-top: 0.0rem;
+}
+
+blockquote.terminal *
+{
+  font-family: monospace;
+}
+
+blockquote.indent
+{
+  border-left-style: none;
+}
+
+blockquote.indent *
+{
+  color: black;
 }

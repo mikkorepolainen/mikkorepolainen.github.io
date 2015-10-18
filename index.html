@@ -4,7 +4,46 @@ description: This is the personal website of Mikko Repolainen. IT-related stuff 
 modified: 2015-10-06 21:04
 relativeroot: 
 ---
+<!--
+<script src="http://platform.linkedin.com/in.js" type="text/javascript"></script>
+<script type="IN/MemberProfile" data-id="https://www.linkedin.com/in/mialhe" data-format="inline" data-related="false"></script>
+-->
 <h1>Posts</h1>
-{% for post in site.posts %}	
-    <p><a href="{{ post.url  | remove_first:'/' }}">{{ post.title }}</a> {{ post.modified | date: "%Y-%m-%d" }} {% if post.category %} <small>{{ post.category }}</small>{% endif %}</p>			
+{% for p in site.categories.posts %}	
+    <p>
+    <a href="{{ p.url | remove_first:'/' }}">{{ p.title }}</a>
+    {{ p.date | date: "%Y-%m-%d" }}
+    {% if p.excerpt %}<br />{{ p.excerpt | strip_html }}{% endif %}
+    {% if p.tags.size > 0 %}<br /><small>Tags: {% for t in p.tags %}{{t}} {% endfor %}</small>{% endif %}
+    <!--{% if p.categories %}<br /><small>Categories: {% for c in p.categories %}{{c}}{% endfor %}</small>{% endif %}-->
+    </p>
 {% endfor %}
+
+<h1>Documents</h1>
+{% for p in site.categories.documents %}
+    <p>
+    <a href="{{ p.url  | remove_first:'/' }}">{{ p.title }}</a>
+    {{ p.modified | date: "%Y-%m-%d" }}
+    {% if p.description %}<br />{{ p.description }}{% endif %}
+    {% if p.tags.size > 0 %}<br /><small>Tags: {% for t in p.tags %}{{t}} {% endfor %}</small>{% endif %}
+    <!--{% if p.categories %}<br /><small>Categories: {% for c in p.categories %}{{c}}{% endfor %}</small>{% endif %}-->
+    </p>
+{% endfor %}
+<!--
+<h1>Categories</h1>
+{% for category in site.categories %}
+    <li style="font-size: {{ category | last | size | times: 100 | divided_by: site.categories.size }}%">
+        <a href="/{{ category | first | slugize }}/">
+            {{ category | first }}
+        </a>
+    </li>
+{% endfor %}
+<h1>Tags</h1>
+{% for tag in site.tags %}
+    <li style="font-size: {{ tag | last | size | times: 100 | divided_by: site.tags.size }}%">
+        <a href="/{{ tag | first | slugize }}/">
+            {{ tag | first }}
+        </a>
+    </li>
+{% endfor %}
+-->

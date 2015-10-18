@@ -2,9 +2,16 @@
 layout: default
 title: Virtualization With KVM
 description: Installing and using a KVM virtualization environment on a Lenovo ThinkServer TS140 with Ubuntu 14.04 LTS
-modified: 2015-10-07 01:22:00
-permalink: virtualization-with-kvm
-relativeroot: ../
+modified: 2015-10-19 01:22:00
+relativeroot: ../../
+permalink: documents/virtualization-with-kvm
+type: document
+tags:
+- KVM
+- QEMU
+- Linux
+- Virtualization
+category: documents
 ---
 {{ page.title }}
 ====================
@@ -21,8 +28,9 @@ Contents
 - [Operating System](#os)
 - [Remote Desktop Connectivity](#rdp)
 - [KVM Installation & Host Configuration](#kvm-inst)
-- [Creating KVM Guests (Domains)](#kvm-hosts)
+- [Creating KVM Guests (Domains)](#kvm-guests)
 - [Managing KVM Guests](#kvm-management)
+- [References & Resources](#references)
 
 <a name="hw"></a>Hardware & BIOS Setup
 --------------
@@ -99,17 +107,6 @@ to
 <a name="kvm-inst"></a>KVM Installation & Host Configuration
 -------------------------------------
 
-###Resources
-
-- [KVM HOWTO](http://www.linux-kvm.org/page/HOWTO1)
-- [KVM Installation](https://help.ubuntu.com/community/KVM/Installation)
-- [KVM Command Line](http://xmodulo.com/use-kvm-command-line-debian-ubuntu.html)
-- [KVM Intro](http://www.dedoimedo.com/computers/kvm-intro.html)
-- [How to Debug Virtualization problems](http://fedoraproject.org/wiki/How_to_debug_Virtualization_problems)
-- [KVM Networking (Ubuntu)](https://help.ubuntu.com/community/KVM/Networking)
-- [KVM Networking](http://www.linux-kvm.org/page/Networking)
-- [KVM Network Bridging](http://hzqtc.github.io/2012/02/kvm-network-bridging.html)
-
 ###Checking Hardware Virtualization Support
 
 `egrep '(vmx|svm)' --color /proc/cpuinfo` should display vmx or svm in red.
@@ -120,6 +117,7 @@ to
 
 > INFO: /dev/kvm exists  
 > KVM acceleration can be used
+{: .terminal}
 
 `virt-host-validate` should give message:
 
@@ -128,6 +126,7 @@ to
 > QEMU: Checking for device /dev/vhost-net		: PASS  
 > QEMU: Checking for device /dev/net/tun			: PASS  
 > LXC: Checking for Linux >= 2.6.26				: PASS
+{: .terminal}
 
 `lsmod | grep kvm` should list either kvm_intel or kvm_amd
 
@@ -141,10 +140,12 @@ Install the following packages using apt-get:
 	- `openssh-server`
 - `bridge-utils` to manage bridged networking (brctl etc.)
 - `ubuntu-vm-builder` (one option for building virtual machines)
+  - `python`
+  - `python-vm-builder`
 - `ubuntu-virt-mgmt` metapackage that contains:
 	- `virt-viewer` (for viewing vms)
 	- `virt-manager` (GUI for VM management)
-- `virtinst` (<span class="marker">TODO</span> Included in some of the packages before?)
+- `virtinst`
 
 The current user is added to libvirtd group automatically. Use `adduser <user> libvirtd` to add other users if necessary (log out and back in).
 
@@ -155,7 +156,7 @@ The bridge connects the virtual machines' virtual interfaces directly to the loc
 through the host server's primary network interface as if the virtual machines were
 physically present in the local area network along with the host.
 
-![Bridge from from http://hzqtc.github.io/2012/02/kvm-network-bridging.html]({{page.relativeroot}}/images/kvm-virtualization-bridge.png)
+{% include figure.html url="../images/kvm-virtualization-bridge.png" description="Figure 1: Bridge (from http://hzqtc.github.io/2012/02/kvm-network-bridging.html)" %}
 
 If network manager is in use, you may want to [disable it](http://xmodulo.com/disable-network-manager-linux.html) before continuing (not necessary though).
 
@@ -186,88 +187,134 @@ Restart networking `/etc/init.d/networking restart`
 
 After starting a guest vm, a virtual interface should show on the bridge as well (e.g. vnet0)
 
-<a name="#kvm-hosts"></a>Creating KVM Guests (Domains)
+<a name="kvm-guests"></a>Creating KVM Guests (Domains)
 ----------------------
 
-**man pages:**
+> Debian based systems have the script `/usr/bin/kvm` by default, that executes
+> `qemu-system-x86_64 -enable-kvm <parameters>`. Use the latter if the kvm command is not available.
+{: .note }
 
-- [qemu-system-x86_64](http://manpages.ubuntu.com/manpages/trusty/en/man1/qemu-system-x86_64.1.html)
-- [virt-install](http://manpages.ubuntu.com/manpages/trusty/en/man1/virt-install.1.html "test")
-- [virsh](http://manpages.ubuntu.com/manpages/trusty/en/man1/virsh.1.html)
-- [virt-clone](http://manpages.ubuntu.com/manpages/trusty/man1/virt-clone.1.html)
+###About Guest Images
 
-http://www.linux-kvm.org/page/HOWTO1
-http://www.dedoimedo.com/computers/kvm-intro.html
-http://xmodulo.com/use-kvm-command-line-debian-ubuntu.html
+- [KVM Tuning]
+- Processor features: use `-cpu host` with qemu to pass all host processor features to quest
+(don't use if need to have portable image).
+- Use virtio for networking if available (rtl8139 and e1000 have better guest support but virtio
+has better performance)
+- Use virtio for storage if available (best performance, but IDE has better support for guests)
+- Easiest storage formats for images are qcow2 and raw. The latter gives better performance but
+reserves all allocated space when created. Disable cache when using raw.
+- libvirtd logs from kvm commands are written into `/var/log/libvirtd/qemu/<guest name>.log`
+- `/var/lib/libvirt/images` is the default location for both installation images and vm images in vmm.
+The directory and its contents are labeled with `virt_image_t` for SELinux compatibility (mandatory if
+using SELinux)
 
-Debian based systems have the script /usr/bin/kvm by default, that executes "qemu-system-x86_64 -enable-kvm <parameters>". Use the latter if the kvm command is not available.
-About guest images
-	http://www.linux-kvm.org/page/Tuning_KVM
-	Processor features: use "-cpu host" with qemu to pass all host processor features to quest (don't use if need to have portable image)
-	Use virtio for networking if available (rtl8139 and e1000 have better guest support but virtio has better performance)
-	Use virtio for storage if available (best performance, but IDE has better support for guests)
-	Easiest storage formats for images are qcow2 and raw. The latter gives better performance but reserves all allocated space when created. Disable cache when using raw.
-	libvirtd logs from kvm commands are written into /var/log/libvirtd/qemu/<guest name>.log
-	/var/lib/libvirt/images is the default location for both installation images and vm images in vmm. The directory and its contents are labeled with "virt_image_t" for SELinux compatibility (mandatory if using SELinux)
-Bridged Networking	
-	Each guest needs a separate mac address, below script can be used to generate https://help.ubuntu.com/community/KVM/Networking
-		MACADDR="52:54:00:$(dd if=/dev/urandom bs=512 count=1 2>/dev/null | md5sum | sed 's/^\(..\)\(..\)\(..\).*$/\1:\2:\3/')"; echo $MACADDR
-		virt-install and VMM autogenerate a valid mac address if not explicitly specified
-	Virsh domain xml: https://help.ubuntu.com/community/KVM/Networking
-		<interface type='bridge'>
-		  <mac address='00:11:22:33:44:55'/>
-		  <source bridge='br0'/>
-		</interface>
-	virt-install parameters: --network bridge=br0,model=virtio,[mac=<predefined mac address>]
-Console access from host https://help.ubuntu.com/community/KVM/Access
-	virsh ttyconsole <name> --> should give e.g. /dev/pts/<number>
-	virt-install and VMM should create the following in domain xml by default
-		<console type='pty'>
-			<target port='0'/>
-		</console>
-	Use "echo $TERM" output on host to determine which terminal to use in the command (xterm below)
-	On guest:
-		Create file /etc/init/ttyS0.conf with contents:
-			start on stopped rc RUNLEVEL=[2345]
-			stop on runlevel [!2345]
-			respawn
-			exec /sbin/getty -L 115200 ttyS0 xterm
-		start ttyS0
-	On host:
-		virsh connect <domain>
-		Press enter to get login prompt
-		use Ctrl + ] or Ctrl + 5 or Ctrl + "^¨~" to exit the console (depends on key map which escape key works http://superuser.com/questions/637669/how-to-exit-a-virsh-console-connection)
-TODO kvm -usb -usbdevice tablet for libvirtd managed machines
-	In VMM add new input device
-	domain config xml:
-		<input type='tablet' bus='usb'>
-			<alias name='input0'/>
-		</input>
-	TODO virt-install options to get this??
-TODO Share a disk/directory on host
-Creating and installing a guest OS
-	Need to have an X session on the host (because of the installation window)
-	Creating a new image with qemu-img
-		qemu-img create -f qcow2 vdisk.img 10G
-		kvm -hda vdisk.img -cdrom /path/to/boot-media.iso -boot d  -m <memory megabytes>
-		headless environment, additional steps http://www.oneunified.net/blog/Virtualization/HeadlessConsole.article
-			add parameters "-vnc :2 -no-reboot"
-			connect to TCP port 5902 of the host machine with a vnc viewer to complete the installation
-		
-	With VMM
-		virt-manager or Virtual Machine Manager from system menu on xfce
-		wants to install package qemu-system (not sure what for since all tools already installed)
-		creating the image in /var/lib/libvirt/images/ by default (TODO can this be changed?)
-		virsh list --> see image now running under virsh
-		look in /var/log/libvirtd/qemu/<guest name>.log to see the kvm command used (here kvm-spice for some reason, though exact same script as kvm)
-		TODO openshare/Temp/lab/UbuntuServer1_qemu.txt
-		virsh dumpxml GuestName > filename.xml --> dump virsh definition xml
-		TODO openshare/Temp/lab/ubuntuserver1.xml
-		http://www.dedoimedo.com/computers/kvm-intro.html
-	Import an image to virsh (https://www.redhat.com/archives/libvirt-users/2010-July/msg00033.html)
-		install package virtinst if not installed
-		virt-install --name UbuntuServer2 --ram 1024 --vcpus 2 --disk path=/kvm/UbuntuServer2.img,bus=virtio,format=qcow2 --import --noautoconsole --network bridge=br0,model=virtio --os-type=linux --os-variant=ubuntutrusty
-		parameters:
+###Bridged Networking	
+
+Each guest needs a separate mac address. The below script can be used to generate valid mac addresses ([KVM Networking]).
+`virt-install` and VMM autogenerate a valid mac address if not explicitly specified.
+	
+{% highlight bash %}
+MACADDR="52:54:00:$(dd if=/dev/urandom bs=512 count=1 2>/dev/null | md5sum | sed 's/^\(..\)\(..\)\(..\).*$/\1:\2:\3/')"; echo $MACADDR
+{% endhighlight %}
+
+Virsh domain xml:
+
+{% highlight xml %}
+<interface type='bridge'>
+  <mac address='00:11:22:33:44:55'/>
+  <source bridge='br0'/>
+</interface>
+{% endhighlight %}
+
+`virt-install` parameters: `--network bridge=br0,model=virtio,[mac=<predefined mac address>]`
+
+###Console Access to Linux Guest From Host
+
+[KVM Access]
+
+`virsh ttyconsole <name>` --> should give e.g. `/dev/pts/<number>`
+
+`virt-install` and VMM should create the following in domain xml by default
+
+{% highlight xml %}
+<console type='pty'>
+	<target port='0'/>
+</console>
+{% endhighlight %}
+
+Use `echo $TERM` output on host to determine which terminal to use in the command (xterm below)
+
+**On Guest**
+
+{: .indent }
+> Create file `/etc/init/ttyS0.conf` with contents:
+> {% highlight bash %}
+start on stopped rc RUNLEVEL=[2345]
+stop on runlevel [!2345]
+respawn
+exec /sbin/getty -L 115200 ttyS0 xterm
+{% endhighlight %}
+
+> Execute `start ttyS0`
+{: .indent }
+
+**On Host**
+
+> Execute `virsh connect <domain>`. Press enter to get login prompt.  
+> 
+> Use `Ctrl + ]` or `Ctrl + 5` or `Ctrl + [^¨~]` to exit the console (depends on key map which escape
+> key works, see [here](http://superuser.com/questions/637669/how-to-exit-a-virsh-console-connection)).
+{: .indent }
+
+###Mouse Integration
+
+<mark>TODO</mark>
+http://blog.bodhizazen.net/linux/kvm-mouse-integration/  
+https://apps.cndls.georgetown.edu/wikis/people/nje5/wiki/Setup_tablet_for_mouse_for_KVM_virtual_machines  
+https://lime-technology.com/forum/index.php?topic=36496.0
+
+kvm -usb -usbdevice tablet for libvirtd managed machines  
+In VMM add new input device  
+domain config xml:
+
+{% highlight xml %}
+<input type='tablet' bus='usb'>
+  <alias name='input0'/>
+</input>
+{% endhighlight %}
+
+virt-install options to get this??
+
+###Share a disk/directory on host
+
+<mark>TODO</mark>
+
+###Creating and installing a guest OS
+Need to have an X session on the host (because of the installation window)
+
+Creating a new image with qemu-img
+- qemu-img create -f qcow2 vdisk.img 10G
+- kvm -hda vdisk.img -cdrom /path/to/boot-media.iso -boot d  -m <memory megabytes>
+- headless environment, additional steps http://www.oneunified.net/blog/Virtualization/HeadlessConsole.article
+  - add parameters "-vnc :2 -no-reboot"
+  - connect to TCP port 5902 of the host machine with a vnc viewer to complete the installation
+
+With VMM
+- virt-manager or Virtual Machine Manager from system menu on xfce
+	wants to install package qemu-system (not sure what for since all tools already installed)
+- creating the image in /var/lib/libvirt/images/ by default (TODO can this be changed?)
+- virsh list --> see image now running under virsh
+- look in /var/log/libvirtd/qemu/<guest name>.log to see the kvm command used (here kvm-spice for some reason, though exact same script as kvm)
+- TODO openshare/Temp/lab/UbuntuServer1_qemu.txt
+- virsh dumpxml GuestName > filename.xml --> dump virsh definition xml
+- TODO openshare/Temp/lab/ubuntuserver1.xml
+	http://www.dedoimedo.com/computers/kvm-intro.html
+
+Import an image to virsh (https://www.redhat.com/archives/libvirt-users/2010-July/msg00033.html)
+- install package virtinst if not installed
+- virt-install --name UbuntuServer2 --ram 1024 --vcpus 2 --disk path=/kvm/UbuntuServer2.img,bus=virtio,format=qcow2 --import --noautoconsole --network bridge=br0,model=virtio --os-type=linux --os-variant=ubuntutrusty
+- parameters:
 			--name UbuntuServer2
 			--ram 1024
 			--vcpus 2
@@ -288,10 +335,12 @@ Creating and installing a guest OS
 	TODO virt-install create new vm directly in one step, e.g. https://www.howtoforge.com/installing-kvm-guests-with-virt-install-on-ubuntu-12.04-lts-server
 	TODO test with xp image (rebooting necessary)
 	TODO test with a recent windows server image
+
 TODO cloning images 
 	gets new MAC and UUID
 	VMM clone option
 	virt-clone http://manpages.ubuntu.com/manpages/trusty/man1/virt-clone.1.html
+
 Running an image
 	Need to have an X session on the host to run graphical
 	use -nographics for running in terminal (exit with Ctrl-A X)
@@ -305,15 +354,13 @@ Running an image
 		-snapshot
 		-localtime -boot c -usb -usbdevice tablet 
 		-net nic,vlan=0,macaddr=00:00:10:52:37:48 -net tap,vlan=0,ifname=tap0,script=no
-	TODO find ip of new guest https://rwmj.wordpress.com/2010/10/26/tip-find-the-ip-address-of-a-virtual-machine/
+
+TODO find ip of new guest https://rwmj.wordpress.com/2010/10/26/tip-find-the-ip-address-of-a-virtual-machine/
 
 <a name="kvm-management"></a>Managing KVM Guests
 ----------------------
 
-TODO kvm management tools http://www.linux-kvm.org/page/Management_Tools
-http://xmodulo.com/use-kvm-command-line-debian-ubuntu.html
-http://www.dedoimedo.com/computers/kvm-intro.html
-https://help.ubuntu.com/community/KVM/Virsh
+<span class="marker">TODO</span> kvm management tools http://www.linux-kvm.org/page/Management_Tools
 
 Virsh commands
 	virsh list --all --> shows all virtual images managed by virsh
@@ -332,3 +379,51 @@ Virsh commands
 	use "--connect qemu:///system" argument to explicitly target the local (sometimes necessary)
 	
 	
+<a name="references"></a>References & Resources
+---------
+
+###Documents
+
+- [KVM HOWTO]
+- [KVM Installation]
+- [KVM Command Line]
+- [KVM Intro]
+- [KVM Tuning]
+- [How to Debug Virtualization problems]
+- [KVM Networking (Ubuntu)]
+- [KVM Networking]
+- [KVM Network Bridging]
+- [KVM Access]
+- [KVM Management Tools]
+- [KVM Virsh Help]
+
+###Man Pages
+
+- [qemu-system-x86_64]
+- [virt-install]
+- [virsh]
+- [virt-clone]
+
+###Related Resources
+- [Convert VirtualBox Image to KVM Image]
+
+[KVM HOWTO]: http://www.linux-kvm.org/page/RunningKVM
+[KVM Installation]: https://help.ubuntu.com/community/KVM/Installation
+[KVM Command Line]: http://xmodulo.com/use-kvm-command-line-debian-ubuntu.html
+[KVM Intro]: http://www.dedoimedo.com/computers/kvm-intro.html
+[KVM Tuning]: http://www.linux-kvm.org/page/Tuning_KVM
+[How to Debug Virtualization problems]: http://fedoraproject.org/wiki/How_to_debug_Virtualization_problems
+[KVM Networking (Ubuntu)]: https://help.ubuntu.com/community/KVM/Networking
+[KVM Networking]: http://www.linux-kvm.org/page/Networking
+[KVM Network Bridging]: http://hzqtc.github.io/2012/02/kvm-network-bridging.html
+[KVM Access]: https://help.ubuntu.com/community/KVM/Access
+[KVM Management Tools]: http://www.linux-kvm.org/page/Management_Tools
+[KVM Virsh Help]: https://help.ubuntu.com/community/KVM/Virsh
+
+[qemu-system-x86_64]: http://manpages.ubuntu.com/manpages/trusty/en/man1/qemu-system-x86_64.1.html
+[virt-install]: http://manpages.ubuntu.com/manpages/trusty/en/man1/virt-install.1.html "test"
+[virsh]: http://manpages.ubuntu.com/manpages/trusty/en/man1/virsh.1.html
+[virt-clone]: http://manpages.ubuntu.com/manpages/trusty/man1/virt-clone.1.html
+
+[Convert VirtualBox Image to KVM Image]: http://blog.bodhizazen.net/linux/convert-virtualbox-vdi-to-kvm-qcow/
+
