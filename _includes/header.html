@@ -1,50 +1,46 @@
 <header>
-  <div class="row">
-    <div class="large-12 columns">
+  <nav class="top-bar" data-topbar>
+    <ul class="title-area">
+      <li class="name">
+        <h1>
+          <a href="{{page.relativeroot}}">Mikko Repolainen</a>
+        </h1>
+      </li>
+      <li class="toggle-topbar menu-icon"><a href="#"></a></li>
+    </ul>
 
-      <nav class="top-bar" data-topbar>
-        <ul class="title-area">
-          <li class="name">
-            <h1>
-              <a href="{{page.relativeroot}}">Mikko Repolainen</a>
-            </h1>
-          </li>
-          <li class="toggle-topbar menu-icon"><a href="#"></a></li>
-        </ul>
+    <section class="top-bar-section">
+      <!--
+      <ul class="left">
+        <li><a href="#">Link 1</a></li>
+        <li><a href="#">Link 2</a></li>
+      </ul>
+      -->
+      <!--				
+      <ul class="right">
+        <li class="search">
+          <form>
+            <input type="search">
+          </form>
+        </li>
 
-        <section class="top-bar-section">
-          <!--
-          <ul class="left">
-            <li><a href="#">Link 1</a></li>
-            <li><a href="#">Link 2</a></li>
-          </ul>
-          -->
-          <!--				
-          <ul class="right">
-            <li class="search">
-              <form>
-                <input type="search">
-              </form>
-            </li>
-
-            <li class="has-button">
-              <a class="small button" href="#">Search</a>
-            </li>
-          </ul>
-          -->
-        </section>
-      </nav>
-      <div class="panel">
-        {% if page.title %}<p>
-          <strong>{{ page.title }}</strong>
-          <span style="float:right; color: #999; font-size: small;">
-            {% if page.modified %}Last Modified: {{ page.modified | date: "%Y-%m-%d" }}
-            {% else %} {{ page.date | date: "%Y-%m-%d" }}
-            {% endif %}
-           </span>
-        </p>{% endif %}
-        {% if page.description %}<p>{{ page.description }}</p>{% endif %}
-      </div>
-    </div>
+        <li class="has-button">
+          <a class="small button" href="#">Search</a>
+        </li>
+      </ul>
+      -->
+    </section>
+  </nav>
+  <div class="panel clearfix">
+    {% if page.title %}<div>
+      <strong>{{ page.title }}</strong>
+      <span class="secondary label right">
+        {% if page.modified %}Last Modified: {{ page.modified | date: "%Y-%m-%d" }}
+        {% else %} {{ page.date | date: "%Y-%m-%d" }}
+        {% endif %}
+      </span>
+    </div>{% endif %}
+    {% if page.description %}{{ page.description }}{% endif %}
+    {% if page.tags.size > 0 %}<span class="right">{% for t in page.tags %}<span class="label">{{t}}</span> {% endfor %}</span>{% endif %}
   </div>
 </header>

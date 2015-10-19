@@ -8,42 +8,60 @@ relativeroot:
 <script src="http://platform.linkedin.com/in.js" type="text/javascript"></script>
 <script type="IN/MemberProfile" data-id="https://www.linkedin.com/in/mialhe" data-format="inline" data-related="false"></script>
 -->
-<h1>Posts</h1>
+
+<div class="row">
+  <h1 class="large-12 columns">Posts</h1>
+</div>
+
 {% for p in site.categories.posts %}	
-    <p>
-    <a href="{{ p.url | remove_first:'/' }}">{{ p.title }}</a>
-    {{ p.date | date: "%Y-%m-%d" }}
-    {% if p.excerpt %}<br />{{ p.excerpt | strip_html }}{% endif %}
-    {% if p.tags.size > 0 %}<br /><small>Tags: {% for t in p.tags %}{{t}} {% endfor %}</small>{% endif %}
-    <!--{% if p.categories %}<br /><small>Categories: {% for c in p.categories %}{{c}}{% endfor %}</small>{% endif %}-->
-    </p>
+  <div class="row clearfix">
+    <div class="large-12 columns">
+      <a href="{{ p.url | remove_first:'/' }}">{{ p.title }}</a>
+      <span class="secondary label right">
+        {% if p.modified %}Last Modified: {{ p.modified | date: "%Y-%m-%d" }}
+        {% else %} {{ p.date | date: "%Y-%m-%d" }}
+        {% endif %}
+      </span>
+    </div>
+  </div>
+  <div class="row clearfix"><div class="large-12 columns">
+    {% if p.description %}{{ p.description }}
+    {% elsif p.excerpt %}{{ p.excerpt | strip_html | truncatewords:30 }}{% endif %}
+    {% if p.tags.size > 0 %}<span class="right">{% for t in p.tags %}<span class="label">{{t}}</span> {% endfor %}</span>{% endif %}
+    <hr />
+  </div></div>
 {% endfor %}
 
-<h1>Documents</h1>
+<div class="row">
+  <h1 class="large-12 columns">Documents</h1>
+</div>
+
 {% for p in site.categories.documents %}
-    <p>
-    <a href="{{ p.url  | remove_first:'/' }}">{{ p.title }}</a>
-    {{ p.modified | date: "%Y-%m-%d" }}
-    {% if p.description %}<br />{{ p.description }}{% endif %}
-    {% if p.tags.size > 0 %}<br /><small>Tags: {% for t in p.tags %}{{t}} {% endfor %}</small>{% endif %}
-    <!--{% if p.categories %}<br /><small>Categories: {% for c in p.categories %}{{c}}{% endfor %}</small>{% endif %}-->
-    </p>
+  <div class="row clearfix">
+    <div class="large-12 columns">
+      <a href="{{ p.url | remove_first:'/' }}">{{ p.title }}</a>
+      <span class="secondary label right">
+        {% if p.modified %}Last Modified: {{ p.modified | date: "%Y-%m-%d" }}
+        {% else %} {{ p.date | date: "%Y-%m-%d" }}
+        {% endif %}
+      </span>
+    </div>
+  </div>
+  <div class="row clearfix"><div class="large-12 columns">
+    {% if p.description %}{{ p.description }}
+    {% elsif p.excerpt %}{{ p.excerpt | strip_html | truncatewords:30 }}{% endif %}
+    {% if p.tags.size > 0 %}<span class="right">{% for t in p.tags %}<span class="label">{{t}}</span> {% endfor %}</span>{% endif %}
+    <hr />
+  </div></div>
 {% endfor %}
-<!--
-<h1>Categories</h1>
-{% for category in site.categories %}
-    <li style="font-size: {{ category | last | size | times: 100 | divided_by: site.categories.size }}%">
-        <a href="/{{ category | first | slugize }}/">
-            {{ category | first }}
-        </a>
-    </li>
-{% endfor %}
-<h1>Tags</h1>
+
+<div class="row">
+  <h1 class="large-12 columns">Tags</h1>
+</div>
+<div class="row"><div class="large-12 columns">
 {% for tag in site.tags %}
-    <li style="font-size: {{ tag | last | size | times: 100 | divided_by: site.tags.size }}%">
-        <a href="/{{ tag | first | slugize }}/">
-            {{ tag | first }}
-        </a>
-    </li>
+<!--<a href="/{{ tag | first | slugize }}/">-->
+  <span class="label" style="font-size: {{ tag | last | size | times: 200 | divided_by: site.tags.size }}%">{{ tag | first }}</span>
+<!--</a>-->
 {% endfor %}
--->
+</div></div>

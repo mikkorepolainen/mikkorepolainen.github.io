@@ -13,8 +13,15 @@
   </head>
   <body>
     {% include header.html %}
-    <!--<main class="large-10 large-offset-2 medium-9 medium-offset-3 columns">-->
-    <main>
+    <nav class="sidebar large-2 medium-3 columns">
+      <ul class="side-nav" role="navigation" title="Contents">
+        {% for c in page.content-links %}
+        <li role="menuitem">{{c}}</li>
+        {% endfor %}
+        <li class="divider"></li>
+      </ul>
+    </nav>
+    <main class="large-10 medium-9 columns">
       {{ content }}
     </main>
     {% include footer.html %}

@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: document
 title: Virtualization With KVM
 description: Installing and using a KVM virtualization environment on a Lenovo ThinkServer TS140 with Ubuntu 14.04 LTS
 modified: 2015-10-19 01:22:00
@@ -12,6 +12,14 @@ tags:
 - Linux
 - Virtualization
 category: documents
+content-links:
+- <a href="#hw">Hardware & BIOS Setup</a>
+- <a href="#os">Operating System</a>
+- <a href="#rdp">Remote Desktop Connectivity</a>
+- <a href="#kvm-inst">KVM Installation & Host Configuration</a>
+- <a href="#kvm-guests">Creating KVM Guests (Domains)</a>
+- <a href="#kvm-management">Managing KVM Guests</a>
+- <a href="#references">References & Resources</a>
 ---
 {{ page.title }}
 ====================
@@ -21,16 +29,6 @@ on a Lenovo ThinkServer TS140 with Ubuntu Server 14.04 LTS,
 for use as virtualized development lab environment.
 The main requirements were exposing all virtual machines to the local area network (bridged networking)
 and being able to connect to the host from windows machines using the Remote Desktop Protocol.
-
-Contents
-----------
-- [Hardware & BIOS Setup](#hw)
-- [Operating System](#os)
-- [Remote Desktop Connectivity](#rdp)
-- [KVM Installation & Host Configuration](#kvm-inst)
-- [Creating KVM Guests (Domains)](#kvm-guests)
-- [Managing KVM Guests](#kvm-management)
-- [References & Resources](#references)
 
 <a name="hw"></a>Hardware & BIOS Setup
 --------------

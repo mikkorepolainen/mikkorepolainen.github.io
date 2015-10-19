@@ -9,6 +9,7 @@ div.highlight {
   border-width: 2px;
   padding: 0.125rem 0.3125rem 0.0625rem;
   margin-bottom: 1.25rem;
+  overflow: auto;
 }
 
 div.highlight pre code{
