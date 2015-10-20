@@ -13,7 +13,21 @@
   </head>
   <body>
     {% include header.html %}
-    <!--<main class="large-10 large-offset-2 medium-9 medium-offset-3 columns">-->
+    <header class="panel clearfix">
+      <div>
+        {{ page.date | date: "%Y-%m-%d" }} <strong>{{ page.title }}</strong>
+      </div>
+      {% if page.description %}
+      <div>
+        {{ page.description }}
+      </div>
+      {% endif %}
+      {% if page.tags.size > 0 %}
+      <div>
+        {% for t in page.tags %}<span class="label">{{t}}</span> {% endfor %}
+      </div>
+      {% endif %}
+    </header>
     <main class="row">
       {{ content }}
     </main>

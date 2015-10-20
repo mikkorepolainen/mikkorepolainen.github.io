@@ -13,6 +13,26 @@
   </head>
   <body>
     {% include header.html %}
+    <header class="panel clearfix">
+      <div>
+        <strong>{{ page.title }}</strong>
+        <span class="secondary label">
+          {% if page.modified %}Last Modified: {{ page.modified | date: "%Y-%m-%d" }}
+          {% else %} {{ page.date | date: "%Y-%m-%d" }}
+          {% endif %}
+        </span>
+      </div>
+      {% if page.description %}
+      <div>
+        {{ page.description }}
+      </div>
+      {% endif %}
+      {% if page.tags.size > 0 %}
+      <div>
+        {% for t in page.tags %}<span class="label">{{t}}</span> {% endfor %}
+      </div>
+      {% endif %}
+    </header>    
     <nav class="sidebar large-2 medium-3 columns">
       <ul class="side-nav" role="navigation" title="Contents">
         {% for c in page.content-links %}

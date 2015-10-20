@@ -13,7 +13,20 @@
   </head>
   <body>
     {% include header.html %}
-    <!--<main class="large-10 large-offset-2 medium-9 medium-offset-3 columns">-->
+    {% if page.title or page.description %}
+    <header class="panel clearfix">
+      {% if page.title %}
+      <div>
+        <strong>{{ page.title }}</strong>
+      </div>
+      {% endif %}
+      {% if page.description %}
+      <div>
+        {{ page.description }}
+      </div>
+      {% endif %}
+    </header>
+    {% endif %}
     <main>
       {{ content }}
     </main>

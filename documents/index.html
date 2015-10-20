@@ -1,0 +1,25 @@
+---
+layout: default
+title: Documents
+relativeroot: ../
+---
+
+<div class="row">
+  {% for p in site.categories.documents %}
+  <div class="large-12 columns">
+    <p><strong><a href="{{page.relativeroot}}{{ p.url | remove_first:'/' }}">{{ p.title }}</a></strong>
+    <span class="secondary label">
+      {% if p.modified %}Last Modified: {{ p.modified | date: "%Y-%m-%d" }}
+      {% else %} {{ p.date | date: "%Y-%m-%d" }}
+      {% endif %}
+    </span>
+    {% if p.description %}
+      <br />{{ p.description }}
+    {% endif %}
+    {% if p.tags.size > 0 %}
+      <br />{% for t in p.tags %}<span class="label">{{t}}</span> {% endfor %}
+    {% endif %}
+    </p>
+  </div>
+  {% endfor %}
+</div>
