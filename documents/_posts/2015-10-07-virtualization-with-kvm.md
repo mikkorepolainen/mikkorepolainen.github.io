@@ -24,11 +24,12 @@ content-links:
 {{ page.title }}
 ====================
 
-This document contains the steps required for installing and configuring a KVM host server
-on a Lenovo ThinkServer TS140 with Ubuntu Server 14.04 LTS,
+This document contains the steps required for installing and configuring a KVM virtual host server
 for use as virtualized development lab environment.
 The main requirements were exposing all virtual machines to the local area network (bridged networking)
-and being able to connect to the host from windows machines using the Remote Desktop Protocol.
+and being able to connect to the host from windows clients using the Remote Desktop Protocol.
+The underlying hardware at the time of writing was a Lenovo ThinkServer TS140
+and the chosen operating system was Ubuntu Server 14.04 LTS.
 
 <a name="hw"></a>Hardware & BIOS Setup
 --------------
@@ -209,9 +210,9 @@ using SELinux)
 
 ###Bridged Networking	
 
-Each guest needs a separate mac address. The below script can be used to generate valid mac addresses ([KVM Networking]).
-`virt-install` and VMM autogenerate a valid mac address if not explicitly specified.
-	
+Each guest needs a separate mac address. `virt-install` and VMM autogenerate a valid mac address if not explicitly specified.
+Otherwise, the below script can be used to generate valid mac addresses ([KVM Networking]).
+
 {% highlight bash %}
 MACADDR="52:54:00:$(dd if=/dev/urandom bs=512 count=1 2>/dev/null | md5sum | sed 's/^\(..\)\(..\)\(..\).*$/\1:\2:\3/')"; echo $MACADDR
 {% endhighlight %}
@@ -288,63 +289,206 @@ virt-install options to get this??
 
 <mark>TODO</mark>
 
-###Creating and installing a guest OS
-Need to have an X session on the host (because of the installation window)
+###Creating a Disk Image and Installing a Guest OS
 
-Creating a new image with qemu-img
-- qemu-img create -f qcow2 vdisk.img 10G
-- kvm -hda vdisk.img -cdrom /path/to/boot-media.iso -boot d  -m <memory megabytes>
-- headless environment, additional steps http://www.oneunified.net/blog/Virtualization/HeadlessConsole.article
-  - add parameters "-vnc :2 -no-reboot"
-  - connect to TCP port 5902 of the host machine with a vnc viewer to complete the installation
+> Installation of guest OSes from cds, dvds or iso images usually requires that the user is able
+> to interact with the operating system console (display, keyboard, mouse).
+> The most straightforward way to accomplish this is to have an X session on the host (either physically
+> or remotely).
+> Guest installation in a headless environment may be a little bit trickier.
+{: .note }
 
-With VMM
-- virt-manager or Virtual Machine Manager from system menu on xfce
-	wants to install package qemu-system (not sure what for since all tools already installed)
-- creating the image in /var/lib/libvirt/images/ by default (TODO can this be changed?)
-- virsh list --> see image now running under virsh
-- look in /var/log/libvirtd/qemu/<guest name>.log to see the kvm command used (here kvm-spice for some reason, though exact same script as kvm)
-- TODO openshare/Temp/lab/UbuntuServer1_qemu.txt
-- virsh dumpxml GuestName > filename.xml --> dump virsh definition xml
-- TODO openshare/Temp/lab/ubuntuserver1.xml
-	http://www.dedoimedo.com/computers/kvm-intro.html
+**With qemu-img**
+
+{% highlight bash %}
+qemu-img create -f qcow2 vdisk.img <disk size gigabytes>G
+kvm -hda vdisk.img -cdrom /path/to/boot-media.iso -boot d  -m <memory megabytes>
+{% endhighlight %}
+
+In a headless environment, [additional steps are needed](http://www.oneunified.net/blog/Virtualization/HeadlessConsole.article)
+
+- Add the following parameters to the kvm command: `-vnc :XX -no-reboot` where XX is the vnc display number (e.g. 2) which corresponds to a tcp port number in the range 59XX (e.g. 5902). The -no-reboot switch prevents the OS from rebooting automatically after installation.
+- Connect to TCP port 59XX of the host machine (e.g. 5902) with a vnc viewer to complete the installation.
+
+<span class="marker">TODO</span> Adding the image to virsh  
+`virt-install --name UbuntuServer2 --ram 1024 --vcpus 2 --disk path=/kvm/UbuntuServer2.img,bus=virtio,format=qcow2 --import --noautoconsole --network bridge=br0,model=virtio --os-type=linux --os-variant=ubuntutrusty`
+
+- parameters:
+  - --name UbuntuServer2
+  - --ram 1024
+  - --vcpus 2
+  - --disk path=/kvm/UbuntuServer2.img,bus=virtio,format=qcow2
+    -	add cache=none if using raw instead of qcow2
+    -	add size=GB if creating new image and sparse=false to allocate full space
+  - --import (skips installation phase)
+  - --noautoconsole (prevents automatically connecting to console)
+  - --network bridge=br0,model=virtio,[mac=<predefined mac address>]
+  - --os-type=linux --os-variant=ubuntutrusty (use --os-variant list to get list of values)
+
+**With VMM**
+
+Launch `virt-manager` or Virtual Machine Manager from system menu on xfce. <span class="marker">TODO</span> On the first run, the command wants to install package qemu-system (not sure what for since all tools should have already installed).
+The tool creates images in `/var/lib/libvirt/images/` by default (<span class="marker">TODO</span> can this be changed?)
+Execute `virsh list` to see the image now running under virsh.
+
+Curious people can look in `/var/log/libvirtd/qemu/<guest name>.log` to see the kvm command used for the installation.
+
+{% highlight bash %}
+/usr/bin/kvm-spice -name UbuntuServer1
+	-S
+	-machine pc-i440fx-trusty,accel=kvm,usb=off
+	-m 1024
+	-realtime mlock=off
+	-smp 2,sockets=2,cores=1,threads=1
+	-uuid 87da8396-5ef0-f851-aa86-e680ba49c882
+	-no-user-config
+	-nodefaults
+	-chardev socket,id=charmonitor,path=/var/lib/libvirt/qemu/UbuntuServer1.monitor,server,nowait
+	-mon chardev=charmonitor,id=monitor,mode=control
+	-rtc base=utc
+	-no-shutdown
+	-boot strict=on
+	-device piix3-usb-uhci,id=usb,bus=pci.0,addr=0x1.0x2
+	-drive file=/var/lib/libvirt/images/UbuntuServer1.img,if=none,id=drive-virtio-disk0,format=qcow2
+	-device virtio-blk-pci,scsi=off,bus=pci.0,addr=0x5,drive=drive-virtio-disk0,id=virtio-disk0,bootindex=1
+	-drive if=none,id=drive-ide0-1-0,readonly=on,format=raw
+	-device ide-cd,bus=ide.1,unit=0,drive=drive-ide0-1-0,id=ide0-1-0
+	-netdev tap,fd=24,id=hostnet0,vhost=on,vhostfd=25
+	-device virtio-net-pci,netdev=hostnet0,id=net0,mac=52:54:00:67:6a:66,bus=pci.0,addr=0x3
+	-chardev pty,id=charserial0
+	-device isa-serial,chardev=charserial0,id=serial0
+	-vnc 127.0.0.1:0
+	-device cirrus-vga,id=video0,bus=pci.0,addr=0x2
+	-device intel-hda,id=sound0,bus=pci.0,addr=0x4
+	-device hda-duplex,id=sound0-codec0,bus=sound0.0,cad=0
+	-device virtio-balloon-pci,id=balloon0,bus=pci.0,addr=0x6
+{% endhighlight %}
+
+Execute `virsh dumpxml <guest name> > <filename>.xml` to dump the virsh definition xml.
+
+{% highlight xml %}
+<domain type='kvm'>
+  <name>UbuntuServer1</name>
+  <uuid>87da8396-5ef0-f851-aa86-e680ba49c882</uuid>
+  <memory unit='KiB'>1048576</memory>
+  <currentMemory unit='KiB'>1048576</currentMemory>
+  <vcpu placement='static'>2</vcpu>
+  <os>
+    <type arch='x86_64' machine='pc-i440fx-trusty'>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <features>
+    <acpi/>
+    <apic/>
+    <pae/>
+  </features>
+  <clock offset='utc'/>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>restart</on_crash>
+  <devices>
+    <emulator>/usr/bin/kvm-spice</emulator>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2'/>
+      <source file='/var/lib/libvirt/images/UbuntuServer1.img'/>
+      <target dev='vda' bus='virtio'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x0'/>
+    </disk>
+    <disk type='block' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <target dev='hdc' bus='ide'/>
+      <readonly/>
+      <address type='drive' controller='0' bus='1' target='0' unit='0'/>
+    </disk>
+    <controller type='usb' index='0'>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x2'/>
+    </controller>
+    <controller type='pci' index='0' model='pci-root'/>
+    <controller type='ide' index='0'>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x1'/>
+    </controller>
+    <interface type='bridge'>
+      <mac address='52:54:00:67:6a:66'/>
+      <source bridge='br0'/>
+      <model type='virtio'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
+    </interface>
+    <serial type='pty'>
+      <target port='0'/>
+    </serial>
+    <console type='pty'>
+      <target type='serial' port='0'/>
+    </console>
+    <input type='mouse' bus='ps2'/>
+    <input type='keyboard' bus='ps2'/>
+    <graphics type='vnc' port='-1' autoport='yes'/>
+    <sound model='ich6'>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
+    </sound>
+    <video>
+      <model type='cirrus' vram='9216' heads='1'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>
+    </video>
+    <memballoon model='virtio'>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x06' function='0x0'/>
+    </memballoon>
+  </devices>
+</domain>
+{% endhighlight %}
+
+**With virt-install**
 
 Import an image to virsh (https://www.redhat.com/archives/libvirt-users/2010-July/msg00033.html)
-- install package virtinst if not installed
+
+<span class="marker">TODO</span> -c <path-to-device-or-iso> https://www.howtoforge.com/installing-kvm-guests-with-virt-install-on-ubuntu-12.04-lts-server
+
 - virt-install --name UbuntuServer2 --ram 1024 --vcpus 2 --disk path=/kvm/UbuntuServer2.img,bus=virtio,format=qcow2 --import --noautoconsole --network bridge=br0,model=virtio --os-type=linux --os-variant=ubuntutrusty
 - parameters:
-			--name UbuntuServer2
-			--ram 1024
-			--vcpus 2
-			--disk path=/kvm/UbuntuServer2.img,bus=virtio,format=qcow2
-				add cache=none if using raw instead of qcow2
-				add size=GB if creating new image and sparse=false to allocate full space
-			--import (skips installation phase)
-			--noautoconsole (prevents automatically connecting to console)
-			--network bridge=br0,model=virtio,[mac=<predefined mac address>]
-			--os-type=linux --os-variant=ubuntutrusty (use --os-variant list to get list of values)
-		ttyconsole should be automatically created, check with virsh ttyconsole <name>
-		set new host name if importing a copied image
-			connect with virsh console <name>, VMM or stop the host on virsh and run the image using kvm
-			edit both /etc/hostname and /etc/hosts on guest, set new host name in both files
-			restart (can also change hostname
-		shows up in virsh list and VMM
-	See https://www.howtoforge.com/virtualization-with-kvm-on-ubuntu-12.10 for vmbuilder, LVM-based virtual machines
-	TODO virt-install create new vm directly in one step, e.g. https://www.howtoforge.com/installing-kvm-guests-with-virt-install-on-ubuntu-12.04-lts-server
-	TODO test with xp image (rebooting necessary)
-	TODO test with a recent windows server image
+  - --name UbuntuServer2
+  - --ram 1024
+  - --vcpus 2
+  - --disk path=/kvm/UbuntuServer2.img,bus=virtio,format=qcow2
+    -	add cache=none if using raw instead of qcow2
+    -	add size=GB if creating new image and sparse=false to allocate full space
+  - --import (skips installation phase)
+  - --noautoconsole (prevents automatically connecting to console)
+  - --network bridge=br0,model=virtio,[mac=<predefined mac address>]
+  - --os-type=linux --os-variant=ubuntutrusty (use --os-variant list to get list of values)
 
-TODO cloning images 
-	gets new MAC and UUID
-	VMM clone option
-	virt-clone http://manpages.ubuntu.com/manpages/trusty/man1/virt-clone.1.html
+ttyconsole should be automatically created, check with virsh ttyconsole <name>
+shows up in virsh list and VMM
 
-Running an image
-	Need to have an X session on the host to run graphical
-	use -nographics for running in terminal (exit with Ctrl-A X)
-	kvm vdisk.img -m <memory megabytes>
-		-usb -usbdevice tablet (not much difference with xp at least)
-	kvm
+<span class="marker">TODO</span> vm-builder  
+See https://www.howtoforge.com/virtualization-with-kvm-on-ubuntu-12.10 for vmbuilder, LVM-based virtual machines
+
+<span class="marker">TODO</span> test with xp image (rebooting necessary)  
+<span class="marker">TODO</span> test with a recent windows server image
+
+###Cloning Images
+
+<mark>TODO</mark>
+
+- gets new MAC and UUID
+- VMM clone option
+- virt-clone http://manpages.ubuntu.com/manpages/trusty/man1/virt-clone.1.html
+
+set new host name if importing a copied image with virt-install
+
+- connect with virsh console <name>, VMM or stop the host on virsh and run the image using kvm
+- edit both /etc/hostname and /etc/hosts on guest, set new host name in both files
+- restart (can also change hostname
+
+###Running an image without virsh
+
+<mark>TODO</mark>
+
+- Need to have an X session on the host to run graphical
+- use `-nographics` for running in terminal (exit with `Ctrl-A` `X`)
+- kvm vdisk.img -m <memory megabytes>
+	-	`-usb -usbdevice tablet` (not much difference with xp at least)
+
+```
+kvm
 		-hda xp-curr.img
 		-m 512
 		-soundhw es1370
@@ -352,8 +496,9 @@ Running an image
 		-snapshot
 		-localtime -boot c -usb -usbdevice tablet 
 		-net nic,vlan=0,macaddr=00:00:10:52:37:48 -net tap,vlan=0,ifname=tap0,script=no
+```
 
-TODO find ip of new guest https://rwmj.wordpress.com/2010/10/26/tip-find-the-ip-address-of-a-virtual-machine/
+<span class="marker">TODO</span> find ip of new guest https://rwmj.wordpress.com/2010/10/26/tip-find-the-ip-address-of-a-virtual-machine/
 
 <a name="kvm-management"></a>Managing KVM Guests
 ----------------------
@@ -361,22 +506,22 @@ TODO find ip of new guest https://rwmj.wordpress.com/2010/10/26/tip-find-the-ip-
 <span class="marker">TODO</span> kvm management tools http://www.linux-kvm.org/page/Management_Tools
 
 Virsh commands
-	virsh list --all --> shows all virtual images managed by virsh
-	virsh define <guest domain xml> --> define a new guest / update existing
-	virsh start GuestName
-	virsh create <guest domain xml> --> define and start a new guest
-	virsh dumpxml GuestName > filename.xml
-	virsh destroy <guest name> --> hard power off a guest
-	virsh shutdown <guest name> --> send shutdown signal
-	virsh suspend <guest name> --> send suspend signal
-	virsh resume <guest name> --> send resume signal
-	virsh console <guest name> [devname] --> connect to console on guest (optional device name)
-	virsh autostart <guest name> --> set guest to autostart on host start
-	virsh dominfo <guest name> --> basic domain info
-	TODO virsh save/restore and other stuff https://www.centos.org/docs/5/html/5.2/Virtualization/chap-Virtualization-Managing_guests_with_virsh.html
-	use "--connect qemu:///system" argument to explicitly target the local (sometimes necessary)
-	
-	
+
+-	virsh list --all --> shows all virtual images managed by virsh
+-	virsh define <guest domain xml> --> define a new guest / update existing
+-	virsh start GuestName
+-	virsh create <guest domain xml> --> define and start a new guest
+-	virsh dumpxml GuestName > filename.xml
+-	virsh destroy <guest name> --> hard power off a guest
+-	virsh shutdown <guest name> --> send shutdown signal
+-	virsh suspend <guest name> --> send suspend signal
+-	virsh resume <guest name> --> send resume signal
+-	virsh console <guest name> [devname] --> connect to console on guest (optional device name)
+-	virsh autostart <guest name> --> set guest to autostart on host start
+-	virsh dominfo <guest name> --> basic domain info
+-	<span class="marker">TODO</span> virsh save/restore and other stuff https://www.centos.org/docs/5/html/5.2/Virtualization/chap-Virtualization-Managing_guests_with_virsh.html
+-	use "--connect qemu:///system" argument to explicitly target the local (sometimes necessary)
+
 <a name="references"></a>References & Resources
 ---------
 
