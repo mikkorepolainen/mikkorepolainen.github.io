@@ -57,3 +57,12 @@ blockquote.indent *
 {
   color: black;
 }
+.row
+{
+  max-width: 100%;
+  margin-left: 0.0rem;
+}
+.content
+{
+  max-width: 62.5rem;
+}

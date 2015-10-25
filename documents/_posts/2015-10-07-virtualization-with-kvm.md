@@ -47,24 +47,13 @@ Install Ubuntu Server 14.04 LTS
 
 - Basic Ubuntu Server
 - OpenSSH server
-- Xfce if planning to use RDP (gnome does not work well with RDP)
+- Xfce instead of gnome for RDP connectivity (gnome [does not work well](http://www.tweaking4all.com/software/linux-software/use-xrdp-remote-access-ubuntu-14-04/) with RDP on Ubuntu 14.04)
 - KVM is left unselected in this phase and installed through apt-get later
 
-<a name="rdp"></a>Remote Desktop Connectivity
-----------------------
+**Installing Xfce Manually**
 
-###Remote Desktop Server and Window Manager
-
-Install xrdp and xfce (unless already installed).
-Apparently xrdp to Ubuntu 14.04 doesn't work with any other window manager except xfce.
-More detailed instructions [here](http://www.tweaking4all.com/software/linux-software/use-xrdp-remote-access-ubuntu-14-04/).
-
-{% highlight bash %}
-apt-get install xrdp
-apt-get install xfce4
-{% endhighlight %}
-
-If you installed another window manager at first, modify `/etc/xrdp/startwm.sh` to start xfce4 session instead:
+If you have an existing system without xfce, run `apt-get install xfce4`.
+Then, modify `/etc/xrdp/startwm.sh` to start xfce4 session instead:
 
 {% highlight bash %}
 #!/bin/sh  
@@ -76,7 +65,19 @@ fi
 
 startxfce4
 {% endhighlight %}
+
 This way there's no need to modify `~/.xsession` (local X session) to get remote desktop connection to work
+
+<a name="rdp"></a>Remote Desktop Connectivity
+----------------------
+
+###Remote Desktop Server
+
+Install xrdp:
+
+{% highlight bash %}
+apt-get install xrdp
+{% endhighlight %}
 
 Connect using a remote desktop client (Module sesman-Xvnc).
 
@@ -246,25 +247,22 @@ Use `echo $TERM` output on host to determine which terminal to use in the comman
 
 **On Guest**
 
-{: .indent }
-> Create file `/etc/init/ttyS0.conf` with contents:
-> {% highlight bash %}
+Create file `/etc/init/ttyS0.conf` with contents:
+{% highlight bash %}
 start on stopped rc RUNLEVEL=[2345]
 stop on runlevel [!2345]
 respawn
 exec /sbin/getty -L 115200 ttyS0 xterm
 {% endhighlight %}
 
-> Execute `start ttyS0`
-{: .indent }
+Execute `start ttyS0`
 
 **On Host**
 
-> Execute `virsh connect <domain>`. Press enter to get login prompt.  
-> 
-> Use `Ctrl + ]` or `Ctrl + 5` or `Ctrl + [^¨~]` to exit the console (depends on key map which escape
-> key works, see [here](http://superuser.com/questions/637669/how-to-exit-a-virsh-console-connection)).
-{: .indent }
+Execute `virsh connect <domain>`. Press enter to get login prompt.  
+
+Use `Ctrl + ]` or `Ctrl + 5` or `Ctrl + [^¨~]` to exit the console (depends on key map which escape
+key works, see [here](http://superuser.com/questions/637669/how-to-exit-a-virsh-console-connection)).
 
 ###Mouse Integration
 
@@ -310,20 +308,12 @@ In a headless environment, [additional steps are needed](http://www.oneunified.n
 - Add the following parameters to the kvm command: `-vnc :XX -no-reboot` where XX is the vnc display number (e.g. 2) which corresponds to a tcp port number in the range 59XX (e.g. 5902). The -no-reboot switch prevents the OS from rebooting automatically after installation.
 - Connect to TCP port 59XX of the host machine (e.g. 5902) with a vnc viewer to complete the installation.
 
-<span class="marker">TODO</span> Adding the image to virsh  
-`virt-install --name UbuntuServer2 --ram 1024 --vcpus 2 --disk path=/kvm/UbuntuServer2.img,bus=virtio,format=qcow2 --import --noautoconsole --network bridge=br0,model=virtio --os-type=linux --os-variant=ubuntutrusty`
+The resulting image can be imported to be managed under virsh using `virt-install`
+with the parameter `--import` which skips the installation phase. E.g.:
 
-- parameters:
-  - --name UbuntuServer2
-  - --ram 1024
-  - --vcpus 2
-  - --disk path=/kvm/UbuntuServer2.img,bus=virtio,format=qcow2
-    -	add cache=none if using raw instead of qcow2
-    -	add size=GB if creating new image and sparse=false to allocate full space
-  - --import (skips installation phase)
-  - --noautoconsole (prevents automatically connecting to console)
-  - --network bridge=br0,model=virtio,[mac=<predefined mac address>]
-  - --os-type=linux --os-variant=ubuntutrusty (use --os-variant list to get list of values)
+`virt-install --name <domain> --ram 1024 --vcpus 2 --disk path=/kvm/<path-to-image>,bus=virtio,format=qcow2 --import --noautoconsole --network bridge=br0,model=virtio --os-type=linux --os-variant=ubuntutrusty`
+
+See the section for virt-install below for more info.
 
 **With VMM**
 

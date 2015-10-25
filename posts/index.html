@@ -5,15 +5,16 @@ relativeroot: ../
 ---
 
 <div class="row">
-  {% for p in site.categories.posts %}	
-  <div class="large-12 columns">
-    <p><strong>{{ p.date | date: "%Y-%m-%d" }} <a href="{{page.relativeroot}}{{ p.url | remove_first:'/' }}">{{ p.title }}</a></strong>
-    <br />{{ p.excerpt | remove: '<p>' | remove: '</p>' | truncatewords:30 }}
-    {% if p.tags.size > 0 %}
-      <br />{% for t in p.tags %}<span class="label">{{t}}</span> {% endfor %}
-    {% endif %}
-    </p>
-  </div>
-  {% endfor %}
-</div>
+<div class="content large-10 medium-9 large-offset-2 medium-offset-3 columns end">
 
+{% for p in site.categories.posts %}	
+<p><strong>{{ p.date | date: "%Y-%m-%d" }} <a href="{{page.relativeroot}}{{ p.url | remove_first:'/' }}">{{ p.title }}</a></strong>
+<br />{{ p.excerpt | remove: '<p>' | remove: '</p>' | truncatewords:30 }}
+{% if p.tags.size > 0 %}
+  <br />{% for t in p.tags %}<span class="label">{{t}}</span> {% endfor %}
+{% endif %}
+</p>
+{% endfor %}
+
+</div>
+</div>

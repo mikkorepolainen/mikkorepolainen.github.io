@@ -32,18 +32,20 @@
         {% for t in page.tags %}<span class="label">{{t}}</span> {% endfor %}
       </div>
       {% endif %}
-    </header>    
-    <nav class="sidebar large-2 medium-3 columns">
-      <ul class="side-nav" role="navigation" title="Contents">
-        {% for c in page.content-links %}
-        <li role="menuitem">{{c}}</li>
-        {% endfor %}
-        <li class="divider"></li>
-      </ul>
-    </nav>
-    <main class="large-10 medium-9 columns">
-      {{ content }}
-    </main>
+    </header>
+    <div class="row">
+      <nav class="sidebar large-2 medium-3 columns">
+        <ul class="side-nav" role="navigation" title="Contents">
+          {% for c in page.content-links %}
+          <li role="menuitem">{{c}}</li>
+          {% endfor %}
+          <li class="divider"></li>
+        </ul>
+      </nav>
+      <main class="content large-10 medium-9 columns end">
+        {{ content }}
+      </main>
+    </div>
     {% include footer.html %}
 
     <script src="{{page.relativeroot}}js/vendor/jquery.js"></script>
