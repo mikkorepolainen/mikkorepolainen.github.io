@@ -66,3 +66,34 @@ blockquote.indent *
 {
   max-width: 62.5rem;
 }
+figure.document-figure
+{
+  border-color: #dfdfdf;
+  border-style: solid;
+  border-width: 2px;
+  padding: 0.0rem;
+  margin-left: 0.0rem;
+  margin-right: 0.0rem;
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+figure.document-figure img
+{
+  display:block;
+  margin-left:auto;
+  margin-right:auto;
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+  max-height: 50vh;
+}
+figure.document-figure figcaption
+{
+  margin-top: 1.25rem;
+  margin-bottom: 0.0rem;
+  margin-left: 0.0rem;
+  margin-right: 0.0rem;
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+  font-family: Verdana, Geneva, sans-serif;
+  background-color: #f8f8f8;
+}

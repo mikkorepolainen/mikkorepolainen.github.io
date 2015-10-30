@@ -146,6 +146,7 @@ Install the following packages using apt-get:
 	- `virt-viewer` (for viewing vms)
 	- `virt-manager` (GUI for VM management)
 - `virtinst`
+- `qemu-system`
 
 The current user is added to libvirtd group automatically. Use `adduser <user> libvirtd` to add other users if necessary (log out and back in).
 
@@ -156,15 +157,16 @@ The bridge connects the virtual machines' virtual interfaces directly to the loc
 through the host server's primary network interface as if the virtual machines were
 physically present in the local area network along with the host.
 
-{% include figure.html url="../images/kvm-virtualization-bridge.png" description="Figure 1: Bridge (from http://hzqtc.github.io/2012/02/kvm-network-bridging.html)" %}
-
-If network manager is in use, you may want to [disable it](http://xmodulo.com/disable-network-manager-linux.html) before continuing (not necessary though).
+{% include figure.html id="figure1" url="../images/kvm-virtualization-bridge.png" caption="Figure 1: Network Bridge" description="The bridge binds the network \"taps\" of the VMs to the physical network interface. Image taken from http://hzqtc.github.io/2012/02/kvm-network-bridging.html" %}
 
 Check the device name of the primary network interface using `nmcli dev status`.
 The device name in this case is em1 (biosdevname naming for integrated network interfaces).
 
-On a local session, run `stop network-manager` (don't do this unless on a local session, kills the network connectivity entirely)
-and `echo "manual" | sudo tee /etc/init/network-manager.override`
+> If network manager is in use, you may want to [disable it](http://xmodulo.com/disable-network-manager-linux.html) before continuing (not necessary though).
+> 
+> On a local session, run `stop network-manager` (don't do this unless on a local session, kills the network connectivity entirely)
+> and `echo "manual" | sudo tee /etc/init/network-manager.override`
+{: .note }
 
 Edit `/etc/network/interfaces` to disable primary interface (eth0/em1) unless controlled by network manager (no problem if it is), add bridge (with primary interface as bridged port)
 
@@ -231,9 +233,7 @@ Virsh domain xml:
 
 ###Console Access to Linux Guest From Host
 
-[KVM Access]
-
-`virsh ttyconsole <name>` --> should give e.g. `/dev/pts/<number>`
+`virsh ttyconsole <name>` should give e.g. `/dev/pts/<number>`
 
 `virt-install` and VMM should create the following in domain xml by default
 
@@ -244,6 +244,8 @@ Virsh domain xml:
 {% endhighlight %}
 
 Use `echo $TERM` output on host to determine which terminal to use in the command (xterm below)
+
+See [KVM Access] for more details.
 
 **On Guest**
 
@@ -281,7 +283,7 @@ domain config xml:
 </input>
 {% endhighlight %}
 
-virt-install options to get this??
+<span class="marker">TODO</span> virt-install options to get this??
 
 ###Share a disk/directory on host
 
@@ -293,7 +295,7 @@ virt-install options to get this??
 > to interact with the operating system console (display, keyboard, mouse).
 > The most straightforward way to accomplish this is to have an X session on the host (either physically
 > or remotely).
-> Guest installation in a headless environment may be a little bit trickier.
+> Guest installation in a headless environment requires a little bit more effort.
 {: .note }
 
 **With qemu-img**
@@ -317,9 +319,13 @@ See the section for virt-install below for more info.
 
 **With VMM**
 
-Launch `virt-manager` or Virtual Machine Manager from system menu on xfce. <span class="marker">TODO</span> On the first run, the command wants to install package qemu-system (not sure what for since all tools should have already installed).
+Launch `virt-manager` or Virtual Machine Manager from system menu on xfce.
 The tool creates images in `/var/lib/libvirt/images/` by default (<span class="marker">TODO</span> can this be changed?)
 Execute `virsh list` to see the image now running under virsh.
+
+> VMM wants to install package qemu-system on the first run. packages.ubuntu.com says it contains "QEMU full system emulation binaries."
+> <span class="marker">TODO</span> Why not included in metapackages?
+{: .note}
 
 Curious people can look in `/var/log/libvirtd/qemu/<guest name>.log` to see the kvm command used for the installation.
 

@@ -1,1 +1,10 @@
-<figure class="figure"><img src="{{ include.url }}" alt="{{ include.description }}"><figcaption>{{ include.description }}</figcaption></figure>
+<figure class="document-figure">  
+  <a href="#" data-reveal-id="{{ include.id }}"><div><img src="{{ include.url }}" alt="{{ include.alt }}" /></div></a>
+  <figcaption>{{ include.caption }}</figcaption>
+</figure>
+<div id="{{ include.id }}" class="reveal-modal xlarge" data-reveal aria-labelledby="modalTitle" aria-hidden="true" role="dialog">
+  <p class="lead">{{ include.caption }}</p>
+  <p><img src="{{ include.url }}" alt="{{ include.alt }}" /></p>
+  <p>{{ include.description }}</p>
+  <a class="close-reveal-modal" aria-label="Close">&#215;</a>
+</div>
