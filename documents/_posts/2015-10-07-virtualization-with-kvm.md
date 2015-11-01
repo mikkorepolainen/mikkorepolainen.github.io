@@ -15,11 +15,12 @@ category: documents
 content-links:
 - <a href="#hw">Hardware & BIOS Setup</a>
 - <a href="#os">Operating System</a>
-- <a href="#rdp">Remote Desktop Connectivity</a>
 - <a href="#kvm-inst">KVM Installation & Host Configuration</a>
 - <a href="#kvm-guests">Creating KVM Guests (Domains)</a>
 - <a href="#kvm-management">Managing KVM Guests</a>
 - <a href="#references">References & Resources</a>
+related:
+- 2015-11-01-xrdp
 ---
 {{ page.title }}
 ====================
@@ -37,8 +38,7 @@ and the chosen operating system was Ubuntu Server 14.04 LTS.
 - Boot to BIOS. There's also an option to use an EasySetup disk, but apparently it's only useful when installing a windows OS or VMware ESXi.
 - Enable virtualization extensions in CPU setup (VT)
 - Enable VT-d as well if direct exclusive device assignment to guests is needed
-(see [here](http://www.linux-kvm.org/page/How_to_assign_devices_with_VT-d_in_KVM)).
-{: #an_id .a_class .b_class }
+(see [here][KVM VT-d]).
 
 <a name="os"></a>Operating System
 -------------------------
@@ -47,62 +47,10 @@ Install Ubuntu Server 14.04 LTS
 
 - Basic Ubuntu Server
 - OpenSSH server
-- Xfce instead of gnome for RDP connectivity (gnome [does not work well](http://www.tweaking4all.com/software/linux-software/use-xrdp-remote-access-ubuntu-14-04/) with RDP on Ubuntu 14.04)
+- Xfce instead of gnome for RDP connectivity (gnome does not work well with RDP on Ubuntu 14.04)
 - KVM is left unselected in this phase and installed through apt-get later
 
-**Installing Xfce Manually**
-
-If you have an existing system without xfce, run `apt-get install xfce4`.
-Then, modify `/etc/xrdp/startwm.sh` to start xfce4 session instead:
-
-{% highlight bash %}
-#!/bin/sh  
-
-if [ -r /etc/default/locale ]; then
-  . /etc/default/locale
-  export LANG LANGUAGE
-fi
-
-startxfce4
-{% endhighlight %}
-
-This way there's no need to modify `~/.xsession` (local X session) to get remote desktop connection to work
-
-<a name="rdp"></a>Remote Desktop Connectivity
-----------------------
-
-###Remote Desktop Server
-
-Install xrdp:
-
-{% highlight bash %}
-apt-get install xrdp
-{% endhighlight %}
-
-Connect using a remote desktop client (Module sesman-Xvnc).
-
-###Keyboard Mappings
-
-The Xrdp key map is not picked up by default from the server if using an "exotic" keyboard layout (like finnish) on the server.
-
-For finnish keyboard layout, copy the swedish keyboard layout as the finnish layout:  
-`cp /etc/xrdp/km-041d.ini /etc/xrdp/km-040b.ini`.  
-Logging out and back in with remote desktop should give the correct default key mappings automatically after this.
-
-If the above does not work automatically, or if using a different keyboard layout than on the server, you need to run `setxkbmap -layout fi` on the local X session each time.
-<span class="marker">TODO</span> Can configure in `~/.xsession`? Would be useful for managed cloud servers where server keyboard layout cannot be changed.
-
-More detailed instructions [here](http://askubuntu.com/questions/290453/xrdp-with-finnish-keyboard).
-
-###XTerm Autocomplete
-
-If tab autocomplete doesn't work in xterm in an xfce session over xrdp, then edit the following file:  
-`~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml`.
-
-Change  
-`<property name="&lt;Super&gt;Tab" type="string" value="switch_window_key"/>`  
-to  
-`<property name="&lt;Super&gt;Tab" type="empty"/>`
+Remote desktop connectivity is explained in a separate document: [Using xRDP for Remote Desktop Access]({% post_url 2015-11-01-xrdp %}).
 
 <a name="kvm-inst"></a>KVM Installation & Host Configuration
 -------------------------------------
@@ -183,7 +131,7 @@ Restart networking `/etc/init.d/networking restart`
 
 `ifconfig` should show br0 with a valid ip address
 
-`brctl show` should show br0 connected to interface em1 and another bridge virbr0 (kvm private networking bridge, none of our concern here)
+`brctl show` should show br0 connected to interface em1 and another bridge virbr0 (kvm private networking bridge)
 
 `nmcli dev status` should show em1 as unmanaged (even without disabling network manager)
 
@@ -198,7 +146,6 @@ After starting a guest vm, a virtual interface should show on the bridge as well
 
 ###About Guest Images
 
-- [KVM Tuning]
 - Processor features: use `-cpu host` with qemu to pass all host processor features to quest
 (don't use if need to have portable image).
 - Use virtio for networking if available (rtl8139 and e1000 have better guest support but virtio
@@ -210,6 +157,8 @@ reserves all allocated space when created. Disable cache when using raw.
 - `/var/lib/libvirt/images` is the default location for both installation images and vm images in vmm.
 The directory and its contents are labeled with `virt_image_t` for SELinux compatibility (mandatory if
 using SELinux)
+
+More about tuning guest performance [here][KVM Tuning].
 
 ###Bridged Networking	
 
@@ -230,6 +179,8 @@ Virsh domain xml:
 {% endhighlight %}
 
 `virt-install` parameters: `--network bridge=br0,model=virtio,[mac=<predefined mac address>]`
+
+<span class="marker">TODO</span> Using private networking with virbr0.
 
 ###Console Access to Linux Guest From Host
 
@@ -518,6 +469,8 @@ Virsh commands
 -	<span class="marker">TODO</span> virsh save/restore and other stuff https://www.centos.org/docs/5/html/5.2/Virtualization/chap-Virtualization-Managing_guests_with_virsh.html
 -	use "--connect qemu:///system" argument to explicitly target the local (sometimes necessary)
 
+<span class="marker">TODO</span> [Convert VirtualBox Image to KVM Image]
+
 <a name="references"></a>References & Resources
 ---------
 
@@ -535,6 +488,8 @@ Virsh commands
 - [KVM Access]
 - [KVM Management Tools]
 - [KVM Virsh Help]
+- [KVM VT-d]
+- [Convert VirtualBox Image to KVM Image]
 
 ###Man Pages
 
@@ -543,8 +498,9 @@ Virsh commands
 - [virsh]
 - [virt-clone]
 
-###Related Resources
-- [Convert VirtualBox Image to KVM Image]
+###Related Documents
+
+- [Using xRDP for Remote Desktop Access]
 
 [KVM HOWTO]: http://www.linux-kvm.org/page/RunningKVM
 [KVM Installation]: https://help.ubuntu.com/community/KVM/Installation
@@ -558,6 +514,7 @@ Virsh commands
 [KVM Access]: https://help.ubuntu.com/community/KVM/Access
 [KVM Management Tools]: http://www.linux-kvm.org/page/Management_Tools
 [KVM Virsh Help]: https://help.ubuntu.com/community/KVM/Virsh
+[KVM VT-d]: http://www.linux-kvm.org/page/How_to_assign_devices_with_VT-d_in_KVM
 
 [qemu-system-x86_64]: http://manpages.ubuntu.com/manpages/trusty/en/man1/qemu-system-x86_64.1.html
 [virt-install]: http://manpages.ubuntu.com/manpages/trusty/en/man1/virt-install.1.html "test"
