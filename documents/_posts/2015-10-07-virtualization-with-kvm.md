@@ -16,11 +16,13 @@ content-links:
 - <a href="#hw">Hardware & BIOS Setup</a>
 - <a href="#os">Operating System</a>
 - <a href="#kvm-inst">KVM Installation & Host Configuration</a>
-- <a href="#kvm-guests">Creating KVM Guests (Domains)</a>
-- <a href="#kvm-management">Managing KVM Guests</a>
+- <a href="#bridge">Bridged Networking</a>
+- <a href="#kvm-guests">Creating Guests</a>
+- <a href="#kvm-cloning">Cloning Guests</a>
+- <a href="#kvm-management">Managing Guests</a>
 - <a href="#references">References & Resources</a>
 related:
-- 2015-11-01-xrdp
+- [2015-11-01-xrdp, asdads]
 ---
 {{ page.title }}
 ====================
@@ -50,7 +52,7 @@ Install Ubuntu Server 14.04 LTS
 - Xfce instead of gnome for RDP connectivity (gnome does not work well with RDP on Ubuntu 14.04)
 - KVM is left unselected in this phase and installed through apt-get later
 
-Remote desktop connectivity is explained in a separate document: [Using xRDP for Remote Desktop Access]({% post_url 2015-11-01-xrdp %}).
+Remote desktop connectivity is explained in a separate document: [Using xRDP for Remote Desktop Access].
 
 <a name="kvm-inst"></a>KVM Installation & Host Configuration
 -------------------------------------
@@ -98,14 +100,17 @@ Install the following packages using apt-get:
 
 The current user is added to libvirtd group automatically. Use `adduser <user> libvirtd` to add other users if necessary (log out and back in).
 
-###Setup Bridge for VM Networking
+<a name="bridge"></a>Bridged Networking
+-----------------
+
+###Setup Bridge on the Host
 
 Setting up the bridge requires the bridge-utils package installed in the previous section.
 The bridge connects the virtual machines' virtual interfaces directly to the local area network
 through the host server's primary network interface as if the virtual machines were
 physically present in the local area network along with the host.
 
-{% include figure.html id="figure1" url="../images/kvm-virtualization-bridge.png" caption="Figure 1: Network Bridge" description="The bridge binds the network \"taps\" of the VMs to the physical network interface. Image taken from http://hzqtc.github.io/2012/02/kvm-network-bridging.html" %}
+{% include figure.html id="kvm-virtualization-bridge" url="../images/kvm-virtualization-bridge.png" caption="Network Bridge" description="The bridge binds the network \"taps\" of the VMs to the physical network interface. Image taken from http://hzqtc.github.io/2012/02/kvm-network-bridging.html" %}
 
 Check the device name of the primary network interface using `nmcli dev status`.
 The device name in this case is em1 (biosdevname naming for integrated network interfaces).
@@ -116,7 +121,7 @@ The device name in this case is em1 (biosdevname naming for integrated network i
 > and `echo "manual" | sudo tee /etc/init/network-manager.override`
 {: .note }
 
-Edit `/etc/network/interfaces` to disable primary interface (eth0/em1) unless controlled by network manager (no problem if it is), add bridge (with primary interface as bridged port)
+Edit `/etc/network/interfaces` to disable primary interface (eth0/em1) unless controlled by network manager (no problem if it is), add bridge (with primary interface as bridged port).
 
 {% highlight bash %}
 auto br0
@@ -127,17 +132,43 @@ iface br0 inet dhcp
     bridge_maxwait 0
 {% endhighlight %}
 
-Restart networking `/etc/init.d/networking restart`
+Restart networking `/etc/init.d/networking restart`.
 
-`ifconfig` should show br0 with a valid ip address
+`ifconfig` should show br0 with a valid ip address.
 
-`brctl show` should show br0 connected to interface em1 and another bridge virbr0 (kvm private networking bridge)
+`brctl show` should show br0 connected to interface em1 and another bridge virbr0 (kvm private networking bridge).
 
-`nmcli dev status` should show em1 as unmanaged (even without disabling network manager)
+`nmcli dev status` should show em1 as unmanaged (even without disabling network manager).
 
-After starting a guest vm, a virtual interface should show on the bridge as well (e.g. vnet0)
+After starting a guest vm, a virtual interface should show on the bridge as well (e.g. vnet0).
 
-<a name="kvm-guests"></a>Creating KVM Guests (Domains)
+###Guest Configuration	
+
+Each guest needs a separate mac address. `virt-install` and VMM autogenerate a valid mac address if not explicitly specified.
+Otherwise, the below script can be used to generate valid mac addresses ([KVM Networking]).
+
+{% highlight bash %}
+MACADDR="52:54:00:$(dd if=/dev/urandom bs=512 count=1 2>/dev/null | md5sum | sed 's/^\(..\)\(..\)\(..\).*$/\1:\2:\3/')"; echo $MACADDR
+{% endhighlight %}
+
+The manually created mac address can be specified in the virsh domain xml:
+
+{% highlight xml %}
+<interface type='bridge'>
+  <mac address='00:11:22:33:44:55'/>
+  <source bridge='br0'/>
+</interface>
+{% endhighlight %}
+
+When installing the VM with `virt-install`, the following parameters can be used: `--network bridge=br0,model=virtio,[mac=<predefined mac address>]`
+
+In VMM the bridge is configured during installation or later in the NIC section:
+
+{% include figure.html id="vmm-bridge" url="../images/vmm-bridge.png" caption="VMM Bridge Configuration" description="Select the bridge in the NIC configuration of the virtual machine." %}
+
+For more network related instructions, see [KVM Networking] and [KVM Networking (Ubuntu)].
+
+<a name="kvm-guests"></a>Creating Guests
 ----------------------
 
 > Debian based systems have the script `/usr/bin/kvm` by default, that executes
@@ -146,7 +177,7 @@ After starting a guest vm, a virtual interface should show on the bridge as well
 
 ###About Guest Images
 
-- Processor features: use `-cpu host` with qemu to pass all host processor features to quest
+- Processor features: use `-cpu host` with qemu to pass all host processor features to guest
 (don't use if need to have portable image).
 - Use virtio for networking if available (rtl8139 and e1000 have better guest support but virtio
 has better performance)
@@ -160,86 +191,6 @@ using SELinux)
 
 More about tuning guest performance [here][KVM Tuning].
 
-###Bridged Networking	
-
-Each guest needs a separate mac address. `virt-install` and VMM autogenerate a valid mac address if not explicitly specified.
-Otherwise, the below script can be used to generate valid mac addresses ([KVM Networking]).
-
-{% highlight bash %}
-MACADDR="52:54:00:$(dd if=/dev/urandom bs=512 count=1 2>/dev/null | md5sum | sed 's/^\(..\)\(..\)\(..\).*$/\1:\2:\3/')"; echo $MACADDR
-{% endhighlight %}
-
-Virsh domain xml:
-
-{% highlight xml %}
-<interface type='bridge'>
-  <mac address='00:11:22:33:44:55'/>
-  <source bridge='br0'/>
-</interface>
-{% endhighlight %}
-
-`virt-install` parameters: `--network bridge=br0,model=virtio,[mac=<predefined mac address>]`
-
-<span class="marker">TODO</span> Using private networking with virbr0.
-
-###Console Access to Linux Guest From Host
-
-`virsh ttyconsole <name>` should give e.g. `/dev/pts/<number>`
-
-`virt-install` and VMM should create the following in domain xml by default
-
-{% highlight xml %}
-<console type='pty'>
-	<target port='0'/>
-</console>
-{% endhighlight %}
-
-Use `echo $TERM` output on host to determine which terminal to use in the command (xterm below)
-
-See [KVM Access] for more details.
-
-**On Guest**
-
-Create file `/etc/init/ttyS0.conf` with contents:
-{% highlight bash %}
-start on stopped rc RUNLEVEL=[2345]
-stop on runlevel [!2345]
-respawn
-exec /sbin/getty -L 115200 ttyS0 xterm
-{% endhighlight %}
-
-Execute `start ttyS0`
-
-**On Host**
-
-Execute `virsh connect <domain>`. Press enter to get login prompt.  
-
-Use `Ctrl + ]` or `Ctrl + 5` or `Ctrl + [^¨~]` to exit the console (depends on key map which escape
-key works, see [here](http://superuser.com/questions/637669/how-to-exit-a-virsh-console-connection)).
-
-###Mouse Integration
-
-<mark>TODO</mark>
-http://blog.bodhizazen.net/linux/kvm-mouse-integration/  
-https://apps.cndls.georgetown.edu/wikis/people/nje5/wiki/Setup_tablet_for_mouse_for_KVM_virtual_machines  
-https://lime-technology.com/forum/index.php?topic=36496.0
-
-kvm -usb -usbdevice tablet for libvirtd managed machines  
-In VMM add new input device  
-domain config xml:
-
-{% highlight xml %}
-<input type='tablet' bus='usb'>
-  <alias name='input0'/>
-</input>
-{% endhighlight %}
-
-<span class="marker">TODO</span> virt-install options to get this??
-
-###Share a disk/directory on host
-
-<mark>TODO</mark>
-
 ###Creating a Disk Image and Installing a Guest OS
 
 > Installation of guest OSes from cds, dvds or iso images usually requires that the user is able
@@ -249,7 +200,7 @@ domain config xml:
 > Guest installation in a headless environment requires a little bit more effort.
 {: .note }
 
-**With qemu-img**
+####With qemu-img
 
 {% highlight bash %}
 qemu-img create -f qcow2 vdisk.img <disk size gigabytes>G
@@ -268,15 +219,47 @@ with the parameter `--import` which skips the installation phase. E.g.:
 
 See the section for virt-install below for more info.
 
-**With VMM**
+**Running an image without virsh**
+
+<mark>TODO</mark>
+
+- Need to have an X session on the host to run graphical
+- use `-nographics` for running in terminal (exit with `Ctrl-A` `X`)
+- kvm vdisk.img -m <memory megabytes>
+	-	`-usb -usbdevice tablet` (not much difference with xp at least)
+
+{% highlight bash %}
+kvm
+		-hda xp-curr.img
+		-m 512
+		-soundhw es1370
+		-no-acpi
+		-snapshot
+		-localtime -boot c -usb -usbdevice tablet 
+		-net nic,vlan=0,macaddr=00:00:10:52:37:48 -net tap,vlan=0,ifname=tap0,script=no
+{% endhighlight %}
+
+<span class="marker">TODO</span> find ip of the VM https://rwmj.wordpress.com/2010/10/26/tip-find-the-ip-address-of-a-virtual-machine/
+
+####With VMM (virt-manager)
 
 Launch `virt-manager` or Virtual Machine Manager from system menu on xfce.
-The tool creates images in `/var/lib/libvirt/images/` by default (<span class="marker">TODO</span> can this be changed?)
-Execute `virsh list` to see the image now running under virsh.
+The tool creates images in `/var/lib/libvirt/images/` by default.
 
-> VMM wants to install package qemu-system on the first run. packages.ubuntu.com says it contains "QEMU full system emulation binaries."
-> <span class="marker">TODO</span> Why not included in metapackages?
-{: .note}
+<ul class="clearing-thumbs small-block-grid-4" data-clearing>
+  <li><a href="../images/vmm-new-vm-01.png"><img data-caption="" src="../images/vmm-new-vm-01.png"></a></li>
+  <li><a href="../images/vmm-new-vm-02.png"><img data-caption="" src="../images/vmm-new-vm-02.png"></a></li>
+  <li><a href="../images/vmm-new-vm-03.png"><img data-caption="" src="../images/vmm-new-vm-03.png"></a></li>
+  <li><a href="../images/vmm-new-vm-04.png"><img data-caption="" src="../images/vmm-new-vm-04.png"></a></li>
+  <li><a href="../images/vmm-new-vm-05.png"><img data-caption="" src="../images/vmm-new-vm-05.png"></a></li>
+  <li><a href="../images/vmm-new-vm-06.png"><img data-caption="" src="../images/vmm-new-vm-06.png"></a></li>
+  <li><a href="../images/vmm-new-vm-07.png"><img data-caption="" src="../images/vmm-new-vm-07.png"></a></li>
+  <li><a href="../images/vmm-new-vm-08.png"><img data-caption="" src="../images/vmm-new-vm-08.png"></a></li>
+  <li><a href="../images/vmm-new-vm-09.png"><img data-caption="" src="../images/vmm-new-vm-09.png"></a></li>
+  <li><a href="../images/vmm-new-vm-10.png"><img data-caption="Install the guest operating system" src="../images/vmm-new-vm-10.png"></a></li>
+</ul>
+
+Execute `virsh list` to see the image now running under virsh.
 
 Curious people can look in `/var/log/libvirtd/qemu/<guest name>.log` to see the kvm command used for the installation.
 
@@ -311,7 +294,140 @@ Curious people can look in `/var/log/libvirtd/qemu/<guest name>.log` to see the 
 	-device virtio-balloon-pci,id=balloon0,bus=pci.0,addr=0x6
 {% endhighlight %}
 
-Execute `virsh dumpxml <guest name> > <filename>.xml` to dump the virsh definition xml.
+####With virt-install
+
+Import an image to virsh (https://www.redhat.com/archives/libvirt-users/2010-July/msg00033.html)
+
+<span class="marker">TODO</span> -c <path-to-device-or-iso> https://www.howtoforge.com/installing-kvm-guests-with-virt-install-on-ubuntu-12.04-lts-server
+
+- virt-install --name UbuntuServer2 --ram 1024 --vcpus 2 --disk path=/kvm/UbuntuServer2.img,bus=virtio,format=qcow2 --import --noautoconsole --network bridge=br0,model=virtio --os-type=linux --os-variant=ubuntutrusty
+- parameters:
+  - --name UbuntuServer2
+  - --ram 1024
+  - --vcpus 2
+  - --disk path=/kvm/UbuntuServer2.img,bus=virtio,format=qcow2
+    -	add cache=none if using raw instead of qcow2
+    -	add size=GB if creating new image and sparse=false to allocate full space
+  - --import (skips installation phase)
+  - --noautoconsole (prevents automatically connecting to console)
+  - --network bridge=br0,model=virtio,[mac=<predefined mac address>]
+  - --os-type=linux --os-variant=ubuntutrusty (use --os-variant list to get list of values)
+
+ttyconsole should be automatically created, check with virsh ttyconsole <name>
+shows up in virsh list and VMM
+
+<span class="marker">TODO</span> vm-builder  
+See https://www.howtoforge.com/virtualization-with-kvm-on-ubuntu-12.10 for vmbuilder, LVM-based virtual machines
+
+<span class="marker">TODO</span> test with xp image (rebooting necessary)  
+<span class="marker">TODO</span> test with a recent windows server image
+
+###Console Access to Linux Guest From Host
+
+`virsh ttyconsole <name>` should give e.g. `/dev/pts/<number>`
+
+`virt-install` and VMM should create the following in the domain definition by default
+
+{% highlight xml %}
+<console type='pty'>
+	<target port='0'/>
+</console>
+{% endhighlight %}
+
+Use `echo $TERM` output on host to determine which terminal to use in the command (xterm below)
+
+See [KVM Access] for more details.
+
+**On Guest**
+
+Create file `/etc/init/ttyS0.conf` with contents:
+{% highlight bash %}
+start on stopped rc RUNLEVEL=[2345]
+stop on runlevel [!2345]
+respawn
+exec /sbin/getty -L 115200 ttyS0 xterm
+{% endhighlight %}
+
+Execute `start ttyS0`
+
+**On Host**
+
+Execute `virsh connect <domain>`. Press enter to get login prompt.  
+
+Use `Ctrl + ]` or `Ctrl + 5` or `Ctrl + [^¨~]` to exit the console (depends on key map which escape
+key works, see [How to exit virsh].
+
+###Mouse Integration
+
+If you're experiencing problems while using the mouse on the guest system, try switching to a virtual tablet input device (absolute coordinates instead of relative).
+
+Using the `--os-type` parameter with `virt-install` should optimize the mouse along with other aspects of the guest.
+There does not seem to be an explicit way of adding a tabled device with `virt-install`.
+
+When running manually with `kvm` add parameters `-usb -usbdevice tablet`.
+
+In VMM add new input device:
+
+{% include figure.html id="vmm-tablet-input" url="../images/vmm-tablet-input.png" caption="Adding a Tablet Input Device in VMM" description="Open the VM configuration in VMM, click Add Hardware and select the EvTouch tablet device from the Input section." %}
+
+In the guest definition XML the same is achieved with:
+
+{% highlight xml %}
+<input type='tablet' bus='usb'>
+  <alias name='input0'/>
+</input>
+{% endhighlight %}
+
+###Share a disk/directory on host
+
+<mark>TODO</mark>
+
+<a name="kvm-cloning"></a>Cloning VMs
+---------------------------
+
+<mark>TODO</mark>
+
+- gets new MAC and UUID
+- VMM clone option
+- virt-clone http://manpages.ubuntu.com/manpages/trusty/man1/virt-clone.1.html
+
+set new host name if importing a copied image with virt-install
+
+- connect with virsh console <name>, VMM or stop the host on virsh and run the image using kvm
+- edit both /etc/hostname and /etc/hosts on guest, set new host name in both files
+- restart (can also change hostname)
+
+<span class="marker">TODO</span> [Convert VirtualBox Image to KVM Image]
+
+<a name="kvm-management"></a>Managing Guests
+----------------------
+
+<span class="marker">TODO</span> kvm management tools http://www.linux-kvm.org/page/Management_Tools  
+<span class="marker">TODO</span> virt-viewer  
+<span class="marker">TODO</span> VMM  
+
+Virsh commands
+
+-	`virsh list --all` shows all VMs managed by virsh
+-	`virsh define <guest definition>.xml` define a new guest / update existing
+-	`virsh start <guest name>` starts the specified guest VM
+-	`virsh create <guest definition>.xml` define and start a new guest
+-	`virsh dumpxml <guest name> <guest definition>.xml` dumps the domain xml to given file
+-	`virsh destroy <guest name>` hard power off a guest
+-	`virsh shutdown <guest name>` send shutdown signal
+-	`virsh suspend <guest name>` send suspend signal
+-	`virsh resume <guest name>` send resume signal
+-	`virsh reboot <guest name>` send reboot signal
+-	`virsh console <guest name> [devname]` connect to console on guest (optional device name)
+-	`virsh autostart <guest name> [--disable]` sets guest to autostart on host start
+-	`virsh dominfo <guest name>` displays basic domain info
+-	<span class="marker">TODO</span> virsh save/restore and other stuff https://www.centos.org/docs/5/html/5.2/Virtualization/chap-Virtualization-Managing_guests_with_virsh.html
+
+Use `--connect qemu:///system` argument with these commands to explicitly target the local daemon (sometimes necessary)
+
+### Updating the Guest Definition XML
+
+Execute `virsh dumpxml <guest name> > <guest definition>.xml` to dump the virsh definition xml.
 
 {% highlight xml %}
 <domain type='kvm'>
@@ -383,94 +499,6 @@ Execute `virsh dumpxml <guest name> > <filename>.xml` to dump the virsh definiti
 </domain>
 {% endhighlight %}
 
-**With virt-install**
-
-Import an image to virsh (https://www.redhat.com/archives/libvirt-users/2010-July/msg00033.html)
-
-<span class="marker">TODO</span> -c <path-to-device-or-iso> https://www.howtoforge.com/installing-kvm-guests-with-virt-install-on-ubuntu-12.04-lts-server
-
-- virt-install --name UbuntuServer2 --ram 1024 --vcpus 2 --disk path=/kvm/UbuntuServer2.img,bus=virtio,format=qcow2 --import --noautoconsole --network bridge=br0,model=virtio --os-type=linux --os-variant=ubuntutrusty
-- parameters:
-  - --name UbuntuServer2
-  - --ram 1024
-  - --vcpus 2
-  - --disk path=/kvm/UbuntuServer2.img,bus=virtio,format=qcow2
-    -	add cache=none if using raw instead of qcow2
-    -	add size=GB if creating new image and sparse=false to allocate full space
-  - --import (skips installation phase)
-  - --noautoconsole (prevents automatically connecting to console)
-  - --network bridge=br0,model=virtio,[mac=<predefined mac address>]
-  - --os-type=linux --os-variant=ubuntutrusty (use --os-variant list to get list of values)
-
-ttyconsole should be automatically created, check with virsh ttyconsole <name>
-shows up in virsh list and VMM
-
-<span class="marker">TODO</span> vm-builder  
-See https://www.howtoforge.com/virtualization-with-kvm-on-ubuntu-12.10 for vmbuilder, LVM-based virtual machines
-
-<span class="marker">TODO</span> test with xp image (rebooting necessary)  
-<span class="marker">TODO</span> test with a recent windows server image
-
-###Cloning Images
-
-<mark>TODO</mark>
-
-- gets new MAC and UUID
-- VMM clone option
-- virt-clone http://manpages.ubuntu.com/manpages/trusty/man1/virt-clone.1.html
-
-set new host name if importing a copied image with virt-install
-
-- connect with virsh console <name>, VMM or stop the host on virsh and run the image using kvm
-- edit both /etc/hostname and /etc/hosts on guest, set new host name in both files
-- restart (can also change hostname
-
-###Running an image without virsh
-
-<mark>TODO</mark>
-
-- Need to have an X session on the host to run graphical
-- use `-nographics` for running in terminal (exit with `Ctrl-A` `X`)
-- kvm vdisk.img -m <memory megabytes>
-	-	`-usb -usbdevice tablet` (not much difference with xp at least)
-
-```
-kvm
-		-hda xp-curr.img
-		-m 512
-		-soundhw es1370
-		-no-acpi
-		-snapshot
-		-localtime -boot c -usb -usbdevice tablet 
-		-net nic,vlan=0,macaddr=00:00:10:52:37:48 -net tap,vlan=0,ifname=tap0,script=no
-```
-
-<span class="marker">TODO</span> find ip of new guest https://rwmj.wordpress.com/2010/10/26/tip-find-the-ip-address-of-a-virtual-machine/
-
-<a name="kvm-management"></a>Managing KVM Guests
-----------------------
-
-<span class="marker">TODO</span> kvm management tools http://www.linux-kvm.org/page/Management_Tools
-
-Virsh commands
-
--	virsh list --all --> shows all virtual images managed by virsh
--	virsh define <guest domain xml> --> define a new guest / update existing
--	virsh start GuestName
--	virsh create <guest domain xml> --> define and start a new guest
--	virsh dumpxml GuestName > filename.xml
--	virsh destroy <guest name> --> hard power off a guest
--	virsh shutdown <guest name> --> send shutdown signal
--	virsh suspend <guest name> --> send suspend signal
--	virsh resume <guest name> --> send resume signal
--	virsh console <guest name> [devname] --> connect to console on guest (optional device name)
--	virsh autostart <guest name> --> set guest to autostart on host start
--	virsh dominfo <guest name> --> basic domain info
--	<span class="marker">TODO</span> virsh save/restore and other stuff https://www.centos.org/docs/5/html/5.2/Virtualization/chap-Virtualization-Managing_guests_with_virsh.html
--	use "--connect qemu:///system" argument to explicitly target the local (sometimes necessary)
-
-<span class="marker">TODO</span> [Convert VirtualBox Image to KVM Image]
-
 <a name="references"></a>References & Resources
 ---------
 
@@ -498,6 +526,10 @@ Virsh commands
 - [virsh]
 - [virt-clone]
 
+###Otherwise
+
+- [How to exit virsh]
+
 ###Related Documents
 
 - [Using xRDP for Remote Desktop Access]
@@ -523,3 +555,6 @@ Virsh commands
 
 [Convert VirtualBox Image to KVM Image]: http://blog.bodhizazen.net/linux/convert-virtualbox-vdi-to-kvm-qcow/
 
+[Using xRDP for Remote Desktop Access]: {% post_url 2015-11-01-xrdp %}
+
+[How to exit virsh]: http://superuser.com/questions/637669/how-to-exit-a-virsh-console-connection
