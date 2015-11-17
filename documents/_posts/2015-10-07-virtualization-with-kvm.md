@@ -194,7 +194,7 @@ More about tuning guest performance [here][KVM Tuning].
 Virsh can manage disk images in different kinds of storage pools.
 The default pool is a directory pool, which refers to a directory on the local disk.
 Manually created images can be added under libvirt management regardless of the location on disk.
-However, VMM and `virt-install` can create new images files only inside storage pools.
+However, VMM and `virt-install` can create new image files only inside storage pools.
 
 Use `virsh pool-list` to view existing pools (a single, default pool exists after installation).
 Examine the xml returned by e.g. `virsh pool-dumpxml default` to view e.g. the directory location of a pool.
