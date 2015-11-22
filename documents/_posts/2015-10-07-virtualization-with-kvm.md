@@ -110,7 +110,7 @@ The bridge connects the virtual machines' virtual network interfaces (taps) dire
 through the host server's primary network interface as if the virtual machines were
 physically present in the local area network along with the host.
 
-{% include figure.html id="kvm-virtualization-bridge" url="../images/kvm-virtualization-bridge.png" caption="Network Bridge" description="The bridge binds the network \"taps\" of the VMs to the physical network interface. Image taken from http://hzqtc.github.io/2012/02/kvm-network-bridging.html" %}
+{% include figure.html id="kvm-virtualization-bridge" url="../images/kvm-virtualization-bridge.svg" caption="Network Bridge" description="The bridge binds the virtual NICs (\"taps\") of the VMs to the physical network interface." %}
 
 Check the device name of the primary network interface using `nmcli dev status`.
 The device name in this case is em1 (biosdevname naming for integrated network interfaces).
@@ -144,8 +144,8 @@ After starting a guest vm, a virtual interface should show on the bridge as well
 
 ###Guest Configuration	
 
-Each guest needs a separate mac address. `virt-install` and VMM autogenerate a valid mac address if not explicitly specified.
-Otherwise, the below script can be used to generate valid mac addresses ([KVM Networking]).
+Each guest needs a separate mac address. The `kvm` and `virt-install` commands as well as VMM autogenerate a valid mac address if not explicitly specified.
+The below script can be used to generate valid mac addresses ([KVM Networking]) if you want to specify them manually.
 
 {% highlight bash %}
 MACADDR="52:54:00:$(dd if=/dev/urandom bs=512 count=1 2>/dev/null | md5sum | sed 's/^\(..\)\(..\)\(..\).*$/\1:\2:\3/')"; echo $MACADDR
@@ -195,6 +195,8 @@ Virsh can manage disk images in different kinds of storage pools.
 The default pool is a directory pool, which refers to a directory on the local disk.
 Manually created images can be added under libvirt management regardless of the location on disk.
 However, VMM and `virt-install` can create new image files only inside storage pools.
+Therefore, if you want to store the images outside of the default pool,
+you must either create a new pool or always create the image file first separately using `qemu-img`.
 
 Use `virsh pool-list` to view existing pools (a single, default pool exists after installation).
 Examine the xml returned by e.g. `virsh pool-dumpxml default` to view e.g. the directory location of a pool.
@@ -235,33 +237,52 @@ A more advanced discussion on storage pools is outside the scope of this documen
 > Installation of guest OSes from cds, dvds or iso images usually requires that the user is able
 > to interact with the operating system console (display, keyboard, mouse).
 > The most straightforward way to accomplish this is to have an X session on the host (either physically
-> or remotely).
-> Guest installation in a headless environment may require a little bit more effort.
+> or remotely, e.g. RDP or VNC).
+> Guest installation on a headless server requires connecting to the guest machine over the network using VNC after starting the installation on the command line.
 {: .note }
+
+A lot of pre-installed images are available from various sources, for example:
+
+- [CoreOS](http://stable.release.core-os.net/amd64-usr/current/)
+- [Ubuntu Cloud Images](http://cloud-images.ubuntu.com/)
+
+The information in section <a href="#kvm-cloning">Cloning Guests</a> applies also for using pre-installed images.
 
 ####Manually
 
-Create a disk image first with `qemu-img create -f qcow2 vdisk.img <disk size gigabytes>G`.
+Create a disk image with `qemu-img create -f qcow2 vdisk.img <disk size gigabytes>G`.
 
 Install the operating system from an installation media:
 
 {% highlight bash %}
-kvm -hda vdisk.img -cdrom /path/to/boot-media.iso -boot d -m <memory in megabytes>`
+sudo kvm -hda vdisk.img -cdrom /path/to/boot-media.iso -boot d -m <memory in megabytes> -net nic,model=virtio -net tap`
 {% endhighlight %}
 
 The `-boot d` option instructs the OS to boot from the first CD-ROM drive.
-
-For bridged networking, add `-net nic,model=virtio -net tap`.
+The `-net nic,model=virtio -net tap` part enables bridged networking.
 Replace virtio with some other network hardware model (e.g. rtl8139) if the guest OS does not support virtio.
 The kvm command with bridged networking must be run with root privileges unless the current user is granted permission to manipulate `/dev/net/tun` (this is not a problem when using VMM or virt-install).
 You can manually specify a mac address for the network interface, e.g.: `-net nic,model=virtio,macaddr=00:00:10:52:37:48`.
 
-In a headless environment, you can use the `-nographic` option to run in terminal mode if the guest OS supports it (exit terminal mode with `Ctrl-A` `X`).
-Another option is to [use vnc](http://www.oneunified.net/blog/Virtualization/HeadlessConsole.article) for installation:
+In a headless environment, you need to connect to the guest with a VNC client after starting the installation:
 
 - Add the following parameters to the kvm command: `-vnc :X -no-reboot` where X is the vnc display number (e.g. 2) which corresponds to a tcp port number in the range 59XX (e.g. 5902).
 The `-no-reboot` switch prevents the OS from rebooting automatically after installation.
 - Connect to TCP port 59XX of the host machine (e.g. 5902) with a vnc viewer to complete the installation.
+
+To password-protect the vnc session, add `,password` to the `-vnc` option.
+An additional option `-monitor stdio` is required to get access to the qemu monitor (prompt `(qemu)`) where the vnc password is set.
+
+{% highlight bash %}
+$ sudo kvm -hda vdisk.img ... -vnc :X,password -monitor stdio`
+QEMU 2.0.0 monitor - type 'help' for more information
+(qemu) change vnc password
+Password: *****
+{% endhighlight %}
+
+Type `quit` in the `(qemu)` prompt to terminate the virtual machine and exit the monitor.
+
+You can use the `-nographic` option to open the guest console directly in the terminal if the guest OS supports it (exit terminal mode with Ctrl-A X).
 
 More options:
 
@@ -269,15 +290,17 @@ More options:
 - `-localtime` set rtc to local time instead of utc. Required at least for DOS or Windows.
 - `-usb -usbdevice tablet` for a better mouse experience in graphical mode (mouse control is better but may still be laggy).
 
-After installation, the image can be started up with the same command line by (optionally) removing the installation media image and changing the boot command to `-boot c`, e.g.:
+After installation, the image can be started up with the same command line by removing the boot command or by changing it to boot from the first hard disk instead of the installation media (e.g. `-boot c`).
+The installation media option `--cdrom ...` can also be removed.
 
 {% highlight bash %}
 sudo kvm vdisk.img -m <memory in megabytes> -boot c [-snapshot]
   -net nic,model=virtio -net tap
 {% endhighlight %}
 
-The `-boot c` option instructs the OS to boot from the first hard disk.
+The `-boot c` option is the default and instructs the OS to boot from the first hard disk.
 You can use the `-snapshot` option to prevent any changes to be written on the disk image itself (writes to temp files instead).
+In a headless environment, you can use the `-nographic` option to run in terminal mode if the guest OS supports it (exit terminal mode with `Ctrl-A` `X`).
 
 If you need to [find the IP address of a running VM][Find the IP of a running VM] and the mac address is known, run `arp -an | grep <mac address of the VM>`
 
@@ -292,6 +315,61 @@ sudo kvm -hda xp.img -boot c -m 1024
 {% endhighlight %}
 
 The resulting image can be imported to be managed under libvirt using either `virt-install` or VMM.
+A third method is to create a domain xml file manually and use the virsh commands (see section [Managing Guests](#kvm-management)) to define the virtual machine.
+
+####With virt-install
+
+The `virt-install` command can be used to create new or to import existing virtual machines.
+The following command creates a new image and installs a system on it.
+Note the size in the `--disk` argument and the installation media specified using the `--cdrom` argument.
+The disk location must point to a directory that belongs to a storage pool.
+
+{% highlight bash %}
+virt-install --name <guest name> --ram <memory in megabytes> --vcpus <no of cpus>
+  --network bridge=br0,model=virtio[,mac=<predefined mac address>]
+  --os-type=linux --os-variant=ubuntutrusty
+  --disk path=<path-to-disk-image>.img,bus=virtio,format=qcow2,size=<disk size in GB>
+  --cdrom=<path-to-installation-media>.iso
+{% endhighlight %}
+
+In a headless environment, you need to connect to the guest with a VNC client after starting the installation:
+
+- Add the following parameters to the `virt-install` command: `--graphics vnc,listen=0.0.0.0,port=59XX,password=<pwd>` where 59XX is the tcp port number for a vnc display (e.g. 5902 for display no. 2)
+- Connect to TCP port 59XX of the host machine (e.g. 5902) with a vnc viewer and supply the specified password to complete the installation.
+
+The following command imports an existing disk image.
+The `--import` switch skips installation phase and the `--noautoconsole` switch prevents the command from automatically connecting to terminal or vnc display.
+Note also that there is no disk size specified for the `--disk` parameter.
+
+{% highlight bash %}
+virt-install --name <guest name> --ram <memory in megabytes> --vcpus <no of cpus>
+  --network bridge=br0,model=virtio[,mac=<predefined mac address>]
+  --os-type=linux --os-variant=ubuntutrusty
+  --disk path=<path-to-disk-image>.img,bus=virtio,format=qcow2
+  --import
+  --noautoconsole
+{% endhighlight %}
+
+The `--os-type` and `--os-variant` parameters can be used to set some useful default settings for the VM.
+The supported OS Type values in VMM are Generic, Linux, Other, Solaris, UNIX and Windows. I haven't seen these documented elsewhere.
+The available OS Variants can be listed by running the command `virt-install --os-variant list`. The `--os-type` parameter is not required if `--os-variant` is used.
+
+For example, to install Windows Server 2012 R2:
+
+{% highlight bash %}
+virt-install --name WindowsServer1 --ram 2048 --vcpus 2
+   --network bridge=br0,model=e1000
+   --os-variant=win2k8
+   --disk path=<path-to-disk>.img,bus=sata,format=qcow2,size=10
+   --cdrom=<path-to-windows_server_2012_r2_x64_dvd>.iso
+{% endhighlight %}
+
+
+For linux guests, the ttyconsole should be automatically created, check with `virsh ttyconsole <guest name>`.
+
+The newly created VM should show up in both `virsh list --all` and VMM.
+
+You can use the `--nographics` option to open the guest console directly in the terminal if the guest OS supports it (exit terminal mode with Ctrl-A X).
 
 ####With VMM (virt-manager)
 
@@ -347,55 +425,6 @@ Curious people can look in `/var/log/libvirt/qemu/<guest name>.log` to see the k
 {% endhighlight %}
 
 To import an existing image, select the "Import existing disk image" option when creating a new VM.
-
-####With virt-install
-
-The `virt-install` command can be used to create new or to import existing virtual machines.
-The following command creates a new image and installs a system on it.
-Note the size in the `--disk` argument and the installation media specified using the `--cdrom` argument.
-The disk location must point to a directory that belongs to a storage pool.
-
-{% highlight bash %}
-virt-install --name <guest name> --ram <memory in megabytes> --vcpus <no of cpus>
-  --network bridge=br0,model=virtio[,mac=<predefined mac address>]
-  --os-type=linux --os-variant=ubuntutrusty
-  --disk path=<path-to-disk-image>.img,bus=virtio,format=qcow2,size=<disk size in GB>
-  --cdrom=<path-to-installation-media>.iso
-{% endhighlight %}
-
-<span class="marker">TODO</span> headless with vnc & --noautoconsole
-
-The following command imports an existing disk image.
-The `--import` switch skips installation phase and the `--noautoconsole` switch prevents the command from automatically connecting to terminal or vnc display.
-Note also that there is no disk size specified for the `--disk` parameter.
-
-{% highlight bash %}
-virt-install --name <guest name> --ram <memory in megabytes> --vcpus <no of cpus>
-  --network bridge=br0,model=virtio[,mac=<predefined mac address>]
-  --os-type=linux --os-variant=ubuntutrusty
-  --disk path=<path-to-disk-image>.img,bus=virtio,format=qcow2
-  --import
-  --noautoconsole
-{% endhighlight %}
-
-The `--os-type` and `--os-variant` parameters can be used to set some useful default settings for the VM.
-The supported OS Type values in VMM are Generic, Linux, Other, Solaris, UNIX and Windows. I haven't seen these documented elsewhere.
-The available OS Variants can be listed by running the command `virt-install --os-variant list`. The `--os-type` parameter is not required if `--os-variant` is used.
-
-For example, to install Windows Server 2012 R2:
-
-{% highlight bash %}
-virt-install --name WindowsServer1 --ram 2048 --vcpus 2
-   --network bridge=br0,model=e1000
-   --os-variant=win2k8
-   --disk path=<path-to-disk>.img,bus=sata,format=qcow2,size=10
-   --cdrom=<path-to-windows_server_2012_r2_x64_dvd>.iso
-{% endhighlight %}
-
-
-For linux guests, the ttyconsole should be automatically created, check with `virsh ttyconsole <guest name>`.
-
-The newly created VM should show up in both `virsh list --all` and VMM.
 
 #### With vm-builder  
 <span class="marker">TODO</span> https://www.howtoforge.com/virtualization-with-kvm-on-ubuntu-12.10 for vmbuilder, LVM-based virtual machines
@@ -456,7 +485,47 @@ In the guest definition XML the same is achieved with:
 </input>
 {% endhighlight %}
 
-###Share a disk/directory on host
+###Share a Directory on Host to a Guest VM
+
+####Linux Guest
+
+Add the following under the devices section in domain xml.
+The label is used with the mount command later on the guest.
+
+{% highlight xml %}
+<devices>
+  ...
+  <filesystem type='mount' accessmode='mapped'>
+    <source dir='<path on host>'/>
+    <target dir='<label>'/>
+  </filesystem>
+  ...
+</devices>
+{% endhighlight %}
+
+On guest, edit `/etc/modules` and add the following lines if missing:
+
+{% highlight bash %}
+9p
+9pnet
+9pnet_virtio
+{% endhighlight %}
+
+Run `sudo service kmod start` to load the modules or restart the VM.
+
+Run `sudo mount <label> <path on guest> -t 9p -o trans=virtio` or add the following line to `/etc/fstab` to mount automatically on boot.
+
+{% highlight bash %}
+<label> <path on guest>            9p             trans=virtio    0       0
+{% endhighlight %}
+
+You may need to experiment with different access modes and host directory permissions to get the read/write permissions right in your scenario.
+See these blog posts for more information:
+
+- [File System Pass-Through in KVM/Qemu/libvirt]
+- [Sharing directories with virtual machines and libvirt]
+
+####Windows Guest
 
 <mark>TODO</mark>
 
@@ -471,11 +540,20 @@ In the guest definition XML the same is achieved with:
 
 set new host name if importing a copied image with virt-install
 
-- connect with virsh console <name>, VMM or stop the host on virsh and run the image using kvm
+E.g. on Ubuntu:
+
+- connect with virsh console <name>, VMM or stop the host on virsh and start the image using kvm
 - edit both /etc/hostname and /etc/hosts on guest, set new host name in both files
-- restart (can also change hostname)
+- reboot guest or `sudo hostname <new hostname>`
 
 <span class="marker">TODO</span> [Convert VirtualBox Image to KVM Image]
+
+<span class="marker">TODO</span> [CoreOS on libvirt (base image)](https://coreos.com/os/docs/latest/booting-with-libvirt.html)
+
+<span class="marker">TODO</span> Resize image
+
+- http://blogs.perl.org/users/rurban/2013/11/how-to-resize-a-ntfs-qemu-qcow2-image-the-easy-way.html
+- https://mariadb.com/kb/en/mariadb/resizing-a-virtual-machine-image/
 
 <a name="kvm-management"></a>Managing Guests
 ----------------------
@@ -487,10 +565,12 @@ set new host name if importing a copied image with virt-install
 Virsh commands
 
 -	`virsh list --all` shows all VMs managed by virsh
--	`virsh define <filename>.xml` define a new guest / update existing
--	`virsh start <guest name>` starts the specified guest VM
--	`virsh create <filename>.xml` define and start a new guest
+-	`virsh define <filename>.xml` define a new guest / update existing (guest name defined in xml file, changes effective after next boot)
+-	`virsh undefine <guest name>
 -	`virsh dumpxml <guest name> > <filename>.xml` dumps the domain xml to given file
+-	`virsh edit <guest name>` edit the domain xml for a guest, changes effective after next boot
+-	`virsh create <filename>.xml` define and start a new guest
+-	`virsh start <guest name>` starts the specified guest VM
 -	`virsh destroy <guest name>` hard power off a guest
 -	`virsh shutdown <guest name>` send shutdown signal
 -	`virsh suspend <guest name>` send suspend signal
@@ -503,11 +583,27 @@ Virsh commands
 
 TODO virt-cat
 
-Use `--connect qemu:///system` argument with these commands to explicitly target the local daemon (sometimes necessary)
+Use `--connect qemu:///system` argument with these commands to explicitly target the local daemon's system VMs (sometimes necessary)
+
+### Deleting a virtual machine
+
+If the VM is running, execute `virsh destroy <guest name>`.
+
+Execute `virsh undefine <guest name>`.
 
 ### Updating the Guest Definition XML
 
 Execute `virsh dumpxml <guest name> > <filename>.xml` to dump the virsh definition xml.
+Make changes to the domain xml and execute `virsh define <filename>.xml` to update the definition (the name of the domain is included in the xml).
+
+Or edit the domain xml directly using `virsh edit <guest name>`. The default editor is vi, but can be changed using $VISUAL or $EDITOR environment variables.
+
+In both cases, the changes will take effect on next proper boot (reboot has no effect):
+
+-	`virsh shutdown <guest name>`
+-	`virsh start <guest name>`
+
+An example domain xml file:
 
 {% highlight xml %}
 <domain type='kvm'>
@@ -581,13 +677,6 @@ Execute `virsh dumpxml <guest name> > <filename>.xml` to dump the virsh definiti
 </domain>
 {% endhighlight %}
 
-Make changes to the domain xml and execute `virsh define <filename>.xml` to update the definition (the name of the domain is included in the xml).
-The changes will take effect on next proper boot (reboot has no effect):
-
--	`virsh shutdown <guest name>`
--	`virsh start <guest name>`
-
-
 <a name="references"></a>References & Resources
 ---------
 
@@ -620,6 +709,9 @@ The changes will take effect on next proper boot (reboot has no effect):
 - [How to exit virsh]
 - [Convert VirtualBox Image to KVM Image]
 - [Find the IP of a running VM]
+- [How to get started with libvirt on Linux]
+- [File System Pass-Through in KVM/Qemu/libvirt]
+- [Sharing directories with virtual machines and libvirt]
 
 ###Related Documents
 
@@ -644,6 +736,9 @@ The changes will take effect on next proper boot (reboot has no effect):
 [virt-install]: http://manpages.ubuntu.com/manpages/trusty/en/man1/virt-install.1.html "test"
 [virsh]: http://manpages.ubuntu.com/manpages/trusty/en/man1/virsh.1.html
 [virt-clone]: http://manpages.ubuntu.com/manpages/trusty/man1/virt-clone.1.html
+[How to get started with libvirt on Linux]: http://rabexc.org/posts/how-to-get-started-with-libvirt-on
+[File System Pass-Through in KVM/Qemu/libvirt]: http://troglobit.github.io/blog/2013/07/05/file-system-pass-through-in-kvm-slash-qemu-slash-libvirt/
+[Sharing directories with virtual machines and libvirt]: http://rabexc.org/posts/p9-setup-in-libvirt
 
 [Convert VirtualBox Image to KVM Image]: http://blog.bodhizazen.net/linux/convert-virtualbox-vdi-to-kvm-qcow/
 
