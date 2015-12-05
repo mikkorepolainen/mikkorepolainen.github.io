@@ -566,7 +566,7 @@ Virsh commands
 
 -	`virsh list --all` shows all VMs managed by virsh
 -	`virsh define <filename>.xml` define a new guest / update existing (guest name defined in xml file, changes effective after next boot)
--	`virsh undefine <guest name>
+-	`virsh undefine <guest name>`
 -	`virsh dumpxml <guest name> > <filename>.xml` dumps the domain xml to given file
 -	`virsh edit <guest name>` edit the domain xml for a guest, changes effective after next boot
 -	`virsh create <filename>.xml` define and start a new guest
