@@ -2,7 +2,7 @@
 layout: document
 title: Virtualization With KVM
 description: Installing and using a KVM virtualization environment on a Lenovo ThinkServer TS140 with Ubuntu 14.04 LTS
-modified: 2015-10-19 01:22:00
+modified: 2015-12-06 01:19:00
 relativeroot: ../../
 permalink: documents/virtualization-with-kvm
 type: document
@@ -97,8 +97,18 @@ Install the following packages using apt-get:
 	- `virt-manager` (GUI for VM management)
 - `virtinst`
 - `qemu-system`
+- `libguestfs-tools` (tools for accessing and modifying virtual machine disk images)
 
-The current user is added to libvirtd group automatically. Use `adduser <user> libvirtd` to add other users if necessary (log out and back in).
+The current user is added to libvirtd group automatically. Use `sudo usermod -a -G libvirtd <user>` to add other users if necessary (log out and back in).
+Check also that you belong to the kvm group and if not, run `sudo usermod -a -G kvm <user>`.
+
+For libguestfs tools like `virt-cat`, `virt-edit` and `virt-sysprep` to work (on Ubuntu), run the following commands after installing the package.
+For more detailed instructions see [here](http://libguestfs.org/guestfs-faq.1.html#downloading-installing-compiling-libguestfs).
+
+{% highlight bash %}
+sudo update-guestfs-appliance
+sudo chmod 0644 /boot/vmlinuz*
+{% endhighlight %}
 
 <a name="bridge"></a>Bridged Networking
 -----------------
@@ -247,6 +257,8 @@ A lot of pre-installed images are available from various sources, for example:
 - [Ubuntu Cloud Images](http://cloud-images.ubuntu.com/)
 
 The information in section <a href="#kvm-cloning">Cloning Guests</a> applies also for using pre-installed images.
+
+<span class="marker">TODO</span> How to set up grub so that boot sequence never gets stuck in the boot menu.
 
 ####Manually
 
@@ -532,19 +544,44 @@ See these blog posts for more information:
 <a name="kvm-cloning"></a>Cloning VMs
 ---------------------------
 
-<mark>TODO</mark>
+A cloned virtual machine requires a new Name MAC address, UUID and a new host name (for DNS to work).
+You can clone a virtual machine directly using either VMM UI or `virt-clone`.
+Another option is to copy the disk image directly and import it with `virt-install --import`.
+In all cases the original virtual machine should be shut down before cloning / copying the image.
 
-- gets new MAC and UUID
-- VMM clone option
-- virt-clone http://manpages.ubuntu.com/manpages/trusty/man1/virt-clone.1.html
+The last option is useful if you intend to keep template images ready for cloning new servers.
+The `virt-sysprep` utility in the `libguestfs-tools` package that can be used to reset/unconfigure/customize/generalize a server image (e.g. add or remove static configuration like MAC address, host name, SSL certs) for this purpose.
+The tool does not support windows images currently but probably will in a future version (in the mean time, there's a windows tool `sysprep.exe` that must be run on the guest).
+For more information, see here: [virt-sysprep].
 
-set new host name if importing a copied image with virt-install
+All of the options above generate a new Name, MAC and UUID automatically. However, the hostname (and possibly other configuration) must still be set on the new guest itself.
 
-E.g. on Ubuntu:
+###Cloning the Virtual Machine
 
-- connect with virsh console <name>, VMM or stop the host on virsh and start the image using kvm
+Shut down the source guest VM before cloning.
+
+**With [virt-clone]**
+
+Execute `virt-clone -o <source guest name> -n <new guest name> -f <path-to-new-disk-image>`.
+
+###Configuring the VM
+
+The naïve way to configure the VM is to start it up, connect to it an make the changes there.
+This can be done by starting the VM with virsh or VMM and connecting with `virsh console <new guest name>`.
+Alternatively, you can run the image directly with kvm and make the same changes there.
+
 - edit both /etc/hostname and /etc/hosts on guest, set new host name in both files
 - reboot guest or `sudo hostname <new hostname>`
+
+A better approach (for linux guests) is to use `virt-edit` from the `libguestfs-tools` package.
+
+- `virt-edit -d <new guest name> /etc/hostname`
+- `virt-edit -d <new guest name> /etc/hosts`
+
+Instead of the `-d` option for guest name you can use the `-a` option to supply a path to the disk image directly.
+
+Libguestfs provides a lot more useful tools for vm image manipulation. See here: [libguestfs].
+If you do not have access to `libguestfs-tools`, there's another method described here: [How to clone virtual machines in KVM - tutorial].
 
 <span class="marker">TODO</span> [Convert VirtualBox Image to KVM Image]
 
@@ -562,7 +599,7 @@ E.g. on Ubuntu:
 <span class="marker">TODO</span> virt-viewer  
 <span class="marker">TODO</span> VMM  
 
-Virsh commands
+**Virsh commands**
 
 -	`virsh list --all` shows all VMs managed by virsh
 -	`virsh define <filename>.xml` define a new guest / update existing (guest name defined in xml file, changes effective after next boot)
@@ -581,9 +618,24 @@ Virsh commands
 -	`virsh dominfo <guest name>` displays basic domain info
 -	<span class="marker">TODO</span> virsh save/restore and other stuff https://www.centos.org/docs/5/html/5.2/Virtualization/chap-Virtualization-Managing_guests_with_virsh.html
 
-TODO virt-cat
-
 Use `--connect qemu:///system` argument with these commands to explicitly target the local daemon's system VMs (sometimes necessary)
+
+**Libguestfs commands**
+
+- `virt-cat -d <guest name> <file path>`
+- `virt-cat -a <path-to-disk-image> <file path>`
+- `virt-edit -d <guest name> <file path>`
+- `virt-edit -a <path-to-disk-image> <file path>`
+
+For more commands, see [libguestfs].
+
+**About Edit Commands**
+
+The default editor for edit commands like `virsh-edit` or `virt-edit` is vi.
+For virsh commands, the editor can be changed using VISUAL or EDITOR environment variables.
+For libguestfs commands, the editor can be changed using the EDITOR environment variable.
+
+E.g. `export EDITOR="nano -w"`, revert with `unset EDITOR`
 
 ### Deleting a virtual machine
 
@@ -596,7 +648,7 @@ Execute `virsh undefine <guest name>`.
 Execute `virsh dumpxml <guest name> > <filename>.xml` to dump the virsh definition xml.
 Make changes to the domain xml and execute `virsh define <filename>.xml` to update the definition (the name of the domain is included in the xml).
 
-Or edit the domain xml directly using `virsh edit <guest name>`. The default editor is vi, but can be changed using $VISUAL or $EDITOR environment variables.
+Or edit the domain xml directly using `virsh edit <guest name>`.
 
 In both cases, the changes will take effect on next proper boot (reboot has no effect):
 
@@ -696,6 +748,7 @@ An example domain xml file:
 - [KVM Virsh Help]
 - [KVM VT-d]
 - [Ubuntu libvirt guide]
+- [libguestfs]
 
 ###Man Pages
 
@@ -703,6 +756,7 @@ An example domain xml file:
 - [virt-install]
 - [virsh]
 - [virt-clone]
+- [virt-sysprep]
 
 ###Other
 
@@ -712,6 +766,7 @@ An example domain xml file:
 - [How to get started with libvirt on Linux]
 - [File System Pass-Through in KVM/Qemu/libvirt]
 - [Sharing directories with virtual machines and libvirt]
+- [How to clone virtual machines in KVM - tutorial]
 
 ###Related Documents
 
@@ -736,9 +791,12 @@ An example domain xml file:
 [virt-install]: http://manpages.ubuntu.com/manpages/trusty/en/man1/virt-install.1.html "test"
 [virsh]: http://manpages.ubuntu.com/manpages/trusty/en/man1/virsh.1.html
 [virt-clone]: http://manpages.ubuntu.com/manpages/trusty/man1/virt-clone.1.html
+[virt-sysprep]: http://libguestfs.org/virt-sysprep.1.html
 [How to get started with libvirt on Linux]: http://rabexc.org/posts/how-to-get-started-with-libvirt-on
 [File System Pass-Through in KVM/Qemu/libvirt]: http://troglobit.github.io/blog/2013/07/05/file-system-pass-through-in-kvm-slash-qemu-slash-libvirt/
 [Sharing directories with virtual machines and libvirt]: http://rabexc.org/posts/p9-setup-in-libvirt
+[libguestfs]: http://libguestfs.org/
+[How to clone virtual machines in KVM - tutorial]: http://www.dedoimedo.com/computers/kvm-clone.html
 
 [Convert VirtualBox Image to KVM Image]: http://blog.bodhizazen.net/linux/convert-virtualbox-vdi-to-kvm-qcow/
 
