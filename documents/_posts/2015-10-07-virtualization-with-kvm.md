@@ -22,7 +22,7 @@ content-links:
 - <a href="#kvm-management">Managing Guests</a>
 - <a href="#references">References & Resources</a>
 related:
-- [2015-11-01-xrdp, asdads]
+published: true
 ---
 {{ page.title }}
 ====================

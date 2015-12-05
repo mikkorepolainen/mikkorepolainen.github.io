@@ -8,6 +8,7 @@ relativeroot: ../
 <div class="content large-10 medium-9 large-offset-2 medium-offset-3 columns end">
 
 {% for p in site.categories.documents %}
+{% if p.published %}
 <p><strong><a href="{{page.relativeroot}}{{ p.url | remove_first:'/' }}">{{ p.title }}</a></strong>
 <span class="secondary label">
   {% if p.modified %}Last Modified: {{ p.modified | date: "%Y-%m-%d" }}
@@ -21,6 +22,7 @@ relativeroot: ../
   <br />{% for t in p.tags %}<span class="label">{{t}}</span> {% endfor %}
 {% endif %}
 </p>
+{% endif %}
 {% endfor %}
 
 </div>
