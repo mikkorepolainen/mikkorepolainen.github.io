@@ -12,20 +12,9 @@ tags:
 - Linux
 - Virtualization
 category: documents
-content-links:
-- <a href="#hw">Hardware & BIOS Setup</a>
-- <a href="#os">Operating System</a>
-- <a href="#kvm-inst">KVM Installation & Host Configuration</a>
-- <a href="#bridge">Bridged Networking</a>
-- <a href="#kvm-guests">Creating Guests</a>
-- <a href="#kvm-cloning">Cloning Guests</a>
-- <a href="#kvm-management">Managing Guests</a>
-- <a href="#references">References & Resources</a>
 related:
 published: true
 ---
-{{ page.title }}
-====================
 
 This document contains the steps required for installing and configuring a KVM virtual host server
 for use as virtualized development lab environment.
@@ -34,16 +23,16 @@ and being able to connect to the host from windows clients using the Remote Desk
 The underlying hardware at the time of writing was a Lenovo ThinkServer TS140
 and the chosen operating system was Ubuntu Server 14.04 LTS.
 
-<a name="hw"></a>Hardware & BIOS Setup
---------------
+Hardware & BIOS Setup
+====================
 - BIOS upgrade using a bootable DOS usb stick. Without the BIOS upgrade, system boot invariably failed if an external USB FDD was attached.
 - Boot to BIOS. There's also an option to use an EasySetup disk, but apparently it's only useful when installing a windows OS or VMware ESXi.
 - Enable virtualization extensions in CPU setup (VT)
 - Enable VT-d as well if direct exclusive device assignment to guests is needed
 (see [here][KVM VT-d]).
 
-<a name="os"></a>Operating System
--------------------------
+Operating System
+====================
 
 Install Ubuntu Server 14.04 LTS
 
@@ -54,10 +43,11 @@ Install Ubuntu Server 14.04 LTS
 
 Remote desktop connectivity is explained in a separate document: [Using xRDP for Remote Desktop Access].
 
-<a name="kvm-inst"></a>KVM Installation & Host Configuration
--------------------------------------
+KVM Installation & Host Configuration
+====================
 
-###Checking Hardware Virtualization Support
+Checking Hardware Virtualization Support
+------------------------------
 
 `egrep '(vmx|svm)' --color /proc/cpuinfo` should display vmx or svm in red.
 
@@ -80,7 +70,8 @@ Remote desktop connectivity is explained in a separate document: [Using xRDP for
 
 `lsmod | grep kvm` should list either kvm_intel or kvm_amd
 
-###Installing KVM and Command Line Management Tools
+Installing KVM and Command Line Management Tools
+------------------------------
 
 Install the following packages using apt-get:
 
@@ -110,10 +101,11 @@ sudo update-guestfs-appliance
 sudo chmod 0644 /boot/vmlinuz*
 {% endhighlight %}
 
-<a name="bridge"></a>Bridged Networking
------------------
+Bridged Networking
+====================
 
-###Setup Bridge on the Host
+Setup Bridge on the Host
+------------------------------
 
 Setting up the bridge requires the bridge-utils package installed in the previous section.
 The bridge connects the virtual machines' virtual network interfaces (taps) directly to the local area network
@@ -152,7 +144,8 @@ Restart networking `/etc/init.d/networking restart`.
 
 After starting a guest vm, a virtual interface should show on the bridge as well (e.g. vnetX or tapX).
 
-###Guest Configuration	
+Guest Configuration	
+------------------------------
 
 Each guest needs a separate mac address. The `kvm` and `virt-install` commands as well as VMM autogenerate a valid mac address if not explicitly specified.
 The below script can be used to generate valid mac addresses ([KVM Networking]) if you want to specify them manually.
@@ -179,14 +172,15 @@ In VMM the bridge is configured during installation or later in the NIC section:
 
 For more network related instructions, see [KVM Networking] and [KVM Networking (Ubuntu)].
 
-<a name="kvm-guests"></a>Creating Guests
-----------------------
+Creating Guests
+====================
 
 > Debian based systems have the script `/usr/bin/kvm` by default, that executes
 > `qemu-system-x86_64 -enable-kvm <parameters>`. Use the latter if the kvm command is not available.
 {: .note }
 
-###About Guest Images
+About Guest Images
+------------------------------
 
 - Processor features: use `-cpu host` with qemu to pass all host processor features to guest
 (don't use if need to have portable image).
@@ -199,7 +193,8 @@ reserves all allocated space when created. Disable cache when using raw.
 
 More about tuning guest performance [here][KVM Tuning].
 
-###Storage Pools
+Storage Pools
+------------------------------
 
 Virsh can manage disk images in different kinds of storage pools.
 The default pool is a directory pool, which refers to a directory on the local disk.
@@ -242,7 +237,8 @@ virsh pool-start <pool name>
 After this, new images can be created with `virt-install` or VMM in the new directory path.
 A more advanced discussion on storage pools is outside the scope of this document.
 
-###Creating a Disk Image and Installing a Guest OS
+Creating a Disk Image and Installing a Guest OS
+------------------------------
 
 > Installation of guest OSes from cds, dvds or iso images usually requires that the user is able
 > to interact with the operating system console (display, keyboard, mouse).
@@ -260,7 +256,7 @@ The information in section <a href="#kvm-cloning">Cloning Guests</a> applies als
 
 <span class="marker">TODO</span> How to set up grub so that boot sequence never gets stuck in the boot menu.
 
-####Manually
+###Manually
 
 Create a disk image with `qemu-img create -f qcow2 vdisk.img <disk size gigabytes>G`.
 
@@ -329,7 +325,7 @@ sudo kvm -hda xp.img -boot c -m 1024
 The resulting image can be imported to be managed under libvirt using either `virt-install` or VMM.
 A third method is to create a domain xml file manually and use the virsh commands (see section [Managing Guests](#kvm-management)) to define the virtual machine.
 
-####With virt-install
+###With virt-install
 
 The `virt-install` command can be used to create new or to import existing virtual machines.
 The following command creates a new image and installs a system on it.
@@ -383,7 +379,7 @@ The newly created VM should show up in both `virsh list --all` and VMM.
 
 You can use the `--nographics` option to open the guest console directly in the terminal if the guest OS supports it (exit terminal mode with Ctrl-A X).
 
-####With VMM (virt-manager)
+###With VMM (virt-manager)
 
 Launch `virt-manager` or Virtual Machine Manager from system menu on xfce.
 The tool creates new images in the default storage pool `/var/lib/libvirt/images/` by default.
@@ -438,10 +434,11 @@ Curious people can look in `/var/log/libvirt/qemu/<guest name>.log` to see the k
 
 To import an existing image, select the "Import existing disk image" option when creating a new VM.
 
-#### With vm-builder  
+### With vm-builder  
 <span class="marker">TODO</span> https://www.howtoforge.com/virtualization-with-kvm-on-ubuntu-12.10 for vmbuilder, LVM-based virtual machines
 
-###Console Access to Linux Guest From Host
+Console Access to Linux Guest From Host
+------------------------------
 
 `virsh ttyconsole <name>` should give e.g. `/dev/pts/<number>`
 
@@ -457,7 +454,7 @@ Use `echo $TERM` output on host to determine which terminal to use in the comman
 
 See [KVM Access] for more details.
 
-**On Guest**
+###On Guest
 
 Create file `/etc/init/ttyS0.conf` with contents:
 {% highlight bash %}
@@ -469,14 +466,15 @@ exec /sbin/getty -L 115200 ttyS0 xterm
 
 Execute `start ttyS0`
 
-**On Host**
+###On Host
 
 Execute `virsh connect <domain>`. Press enter to get login prompt.  
 
 Use `Ctrl + ]` or `Ctrl + 5` or `Ctrl + [^¨~]` to exit the console (depends on key map which escape
 key works, see [How to exit virsh].
 
-###Mouse Integration
+Mouse Integration
+------------------------------
 
 If you're experiencing problems while using the mouse on the guest system, try switching to a virtual tablet input device (absolute coordinates instead of relative).
 
@@ -497,9 +495,10 @@ In the guest definition XML the same is achieved with:
 </input>
 {% endhighlight %}
 
-###Share a Directory on Host to a Guest VM
+Share a Directory on Host to a Guest VM
+------------------------------
 
-####Linux Guest
+###Linux Guest
 
 Add the following under the devices section in domain xml.
 The label is used with the mount command later on the guest.
@@ -537,12 +536,12 @@ See these blog posts for more information:
 - [File System Pass-Through in KVM/Qemu/libvirt]
 - [Sharing directories with virtual machines and libvirt]
 
-####Windows Guest
+###Windows Guest
 
 <mark>TODO</mark>
 
-<a name="kvm-cloning"></a>Cloning VMs
----------------------------
+Cloning VMs
+====================
 
 A cloned virtual machine requires a new Name MAC address, UUID and a new host name (for DNS to work).
 You can clone a virtual machine directly using either VMM UI or `virt-clone`.
@@ -556,7 +555,8 @@ For more information, see here: [virt-sysprep].
 
 All of the options above generate a new Name, MAC and UUID automatically. However, the hostname (and possibly other configuration) must still be set on the new guest itself.
 
-###Cloning the Virtual Machine
+Cloning the Virtual Machine
+------------------------------
 
 Shut down the source guest VM before cloning.
 
@@ -564,7 +564,8 @@ Shut down the source guest VM before cloning.
 
 Execute `virt-clone -o <source guest name> -n <new guest name> -f <path-to-new-disk-image>`.
 
-###Configuring the VM
+Configuring the VM
+------------------------------
 
 The naïve way to configure the VM is to start it up, connect to it an make the changes there.
 This can be done by starting the VM with virsh or VMM and connecting with `virsh console <new guest name>`.
@@ -592,8 +593,8 @@ If you do not have access to `libguestfs-tools`, there's another method describe
 - http://blogs.perl.org/users/rurban/2013/11/how-to-resize-a-ntfs-qemu-qcow2-image-the-easy-way.html
 - https://mariadb.com/kb/en/mariadb/resizing-a-virtual-machine-image/
 
-<a name="kvm-management"></a>Managing Guests
-----------------------
+Managing Guests
+====================
 
 <span class="marker">TODO</span> kvm management tools http://www.linux-kvm.org/page/Management_Tools  
 <span class="marker">TODO</span> virt-viewer  
@@ -637,13 +638,15 @@ For libguestfs commands, the editor can be changed using the EDITOR environment 
 
 E.g. `export EDITOR="nano -w"`, revert with `unset EDITOR`
 
-### Deleting a virtual machine
+Deleting a virtual machine
+------------------------------
 
 If the VM is running, execute `virsh destroy <guest name>`.
 
 Execute `virsh undefine <guest name>`.
 
-### Updating the Guest Definition XML
+Updating the Guest Definition XML
+------------------------------
 
 Execute `virsh dumpxml <guest name> > <filename>.xml` to dump the virsh definition xml.
 Make changes to the domain xml and execute `virsh define <filename>.xml` to update the definition (the name of the domain is included in the xml).
@@ -729,10 +732,11 @@ An example domain xml file:
 </domain>
 {% endhighlight %}
 
-<a name="references"></a>References & Resources
----------
+References & Resources
+====================
 
-###Documentation
+Documentation
+------------------------------
 
 - [KVM HOWTO]
 - [KVM Installation]
@@ -750,7 +754,8 @@ An example domain xml file:
 - [Ubuntu libvirt guide]
 - [libguestfs]
 
-###Man Pages
+Man Pages
+------------------------------
 
 - [qemu-system-x86_64]
 - [virt-install]
@@ -758,7 +763,8 @@ An example domain xml file:
 - [virt-clone]
 - [virt-sysprep]
 
-###Other
+Other
+------------------------------
 
 - [How to exit virsh]
 - [Convert VirtualBox Image to KVM Image]
@@ -768,7 +774,8 @@ An example domain xml file:
 - [Sharing directories with virtual machines and libvirt]
 - [How to clone virtual machines in KVM - tutorial]
 
-###Related Documents
+Related Documents
+------------------------------
 
 - [Using xRDP for Remote Desktop Access]
 

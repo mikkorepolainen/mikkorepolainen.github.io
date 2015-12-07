@@ -34,15 +34,9 @@
       {% endif %}
     </header>
     <div class="row">
-      <nav class="sidebar large-2 medium-3 columns">
-        <ul class="side-nav" role="navigation" title="Contents">
-          {% for c in page.content-links %}
-          <li role="menuitem">{{c}}</li>
-          {% endfor %}
-          <li class="divider"></li>
-        </ul>
+      <nav class="sidebar large-2 medium-3 columns" id="toc">
       </nav>
-      <main class="content large-10 medium-9 columns end">
+      <main class="content large-10 medium-9 columns end" id="contents">
         {{ content }}
       </main>
     </div>
@@ -50,6 +44,43 @@
 
     <script src="{{page.relativeroot}}js/vendor/jquery.js"></script>
     <script src="{{page.relativeroot}}js/foundation.min.js"></script>
+    <script>
+      // http://stackoverflow.com/questions/187619/is-there-a-javascript-solution-to-generating-a-table-of-contents-for-a-page
+      function TableOfContents(input, output) {
+        var toc = '';
+        var container = document.querySelector(input) || document.querySelector('#contents');
+        var output = output || '#toc';
+        var level1_anchor = '';
+
+        container.innerHTML =
+          container.innerHTML.replace(
+            /<h([\d])[^>]*>([^<]+)<\/h[\d]>/gi,
+            function (str, level, titleText) {
+              if (level > 2) {
+                return str;
+              }
+              var anchor = titleText.replace(/ /g, "_");
+
+              if (level == 1)
+              {
+                level1_anchor = anchor;              
+                if (toc.length != 0) toc += '<li class="divider"></li>';
+                toc += '<li role="menuitem"><a href="#' + anchor + '"><b>' + titleText + '</b></a>';
+              }
+              else
+              {
+                anchor = level1_anchor + "_" + anchor;
+                toc += '<li role="menuitem"><a href="#' + anchor + '">' + titleText + '</a>';
+              }
+              return '<h' + level + '><a href="#' + anchor + '" id="' + anchor + '"></a>' + titleText + '</h' + level + '>';
+            }
+          );
+
+        toc = '<ul class="side-nav" role="navigation" title="Contents">' + toc + '</ul>';
+        document.querySelector(output).innerHTML += toc;
+      };
+      TableOfContents('#contents', '#toc');
+    </script>
     <script>
       $(document).foundation();
     </script>
