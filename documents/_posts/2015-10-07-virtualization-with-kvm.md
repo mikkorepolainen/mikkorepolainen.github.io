@@ -2,7 +2,7 @@
 layout: document
 title: Virtualization With KVM
 description: Installing and using a KVM virtualization environment on a Lenovo ThinkServer TS140 with Ubuntu 14.04 LTS
-modified: 2015-12-06 01:19:00
+modified: 2015-12-07 16:23:00
 relativeroot: ../../
 permalink: documents/virtualization-with-kvm
 type: document
@@ -252,9 +252,9 @@ A lot of pre-installed images are available from various sources, for example:
 - [CoreOS](http://stable.release.core-os.net/amd64-usr/current/)
 - [Ubuntu Cloud Images](http://cloud-images.ubuntu.com/)
 
-The information in section <a href="#kvm-cloning">Cloning Guests</a> applies also for using pre-installed images.
+The information in section Cloning Guests applies also for using pre-installed images.
 
-<span class="marker">TODO</span> How to set up grub so that boot sequence never gets stuck in the boot menu.
+TODO How to set up grub so that boot sequence never gets stuck in the boot menu.
 
 ###Manually
 
@@ -435,7 +435,7 @@ Curious people can look in `/var/log/libvirt/qemu/<guest name>.log` to see the k
 To import an existing image, select the "Import existing disk image" option when creating a new VM.
 
 ### With vm-builder  
-<span class="marker">TODO</span> https://www.howtoforge.com/virtualization-with-kvm-on-ubuntu-12.10 for vmbuilder, LVM-based virtual machines
+TODO https://www.howtoforge.com/virtualization-with-kvm-on-ubuntu-12.10 for vmbuilder, LVM-based virtual machines
 
 Console Access to Linux Guest From Host
 ------------------------------
@@ -450,7 +450,7 @@ Console Access to Linux Guest From Host
 </console>
 {% endhighlight %}
 
-Use `echo $TERM` output on host to determine which terminal to use in the command (xterm below)
+Use `echo $TERM` output on host to determine which terminal to use in the command (`xterm` is used here)
 
 See [KVM Access] for more details.
 
@@ -538,7 +538,7 @@ See these blog posts for more information:
 
 ###Windows Guest
 
-<mark>TODO</mark>
+TODO
 
 Cloning VMs
 ====================
@@ -554,6 +554,9 @@ The tool does not support windows images currently but probably will in a future
 For more information, see here: [virt-sysprep].
 
 All of the options above generate a new Name, MAC and UUID automatically. However, the hostname (and possibly other configuration) must still be set on the new guest itself.
+
+> There's a guide for converting VirtualBox images to KVM images here: [Convert VirtualBox Image to KVM Image]
+{: .note }
 
 Cloning the Virtual Machine
 ------------------------------
@@ -584,21 +587,38 @@ Instead of the `-d` option for guest name you can use the `-a` option to supply 
 Libguestfs provides a lot more useful tools for vm image manipulation. See here: [libguestfs].
 If you do not have access to `libguestfs-tools`, there's another method described here: [How to clone virtual machines in KVM - tutorial].
 
-<span class="marker">TODO</span> [Convert VirtualBox Image to KVM Image]
+Resizing a VM Image
+----------------------
 
-<span class="marker">TODO</span> [CoreOS on libvirt (base image)](https://coreos.com/os/docs/latest/booting-with-libvirt.html)
+With the libguestfs tools, resizing cannot be done in place. Instead, a new image is created based on the old one.
+For more information, see the following documents:
 
-<span class="marker">TODO</span> Resize image
+- [virt-filesystems]
+- [virt-df]
+- [virt-resize]
 
-- http://blogs.perl.org/users/rurban/2013/11/how-to-resize-a-ntfs-qemu-qcow2-image-the-easy-way.html
-- https://mariadb.com/kb/en/mariadb/resizing-a-virtual-machine-image/
+###Expand a single partition (linux)
+
+Example of increasing the disk space on a single partition inside a basic linux VM.
+LVM must not be in use and the image must be in the qcow2 format.
+Shut down the virtual machine before executing the commands below.
+
+Run `virt-filesystems --long -h --all -a <old guest image>` to list file systems.
+Note the name of the partition to expand, e.g. `/dev/sda2`.
+
+Run the following commands:
+
+{% highlight bash %}
+qemu-img create -f qcow2 -o preallocation=metadata <new guest image> <new total size>G
+virt-resize --expand <partition name> <old guest image> <new guest image>
+{% endhighlight %}
 
 Managing Guests
 ====================
 
-<span class="marker">TODO</span> kvm management tools http://www.linux-kvm.org/page/Management_Tools  
-<span class="marker">TODO</span> virt-viewer  
-<span class="marker">TODO</span> VMM  
+TODO kvm management tools http://www.linux-kvm.org/page/Management_Tools  
+TODO virt-viewer  
+TODO VMM  
 
 **Virsh commands**
 
@@ -617,7 +637,7 @@ Managing Guests
 -	`virsh console <guest name> [devname]` connect to console on guest (optional device name)
 -	`virsh autostart <guest name> [--disable]` sets guest to autostart on host start
 -	`virsh dominfo <guest name>` displays basic domain info
--	<span class="marker">TODO</span> virsh save/restore and other stuff https://www.centos.org/docs/5/html/5.2/Virtualization/chap-Virtualization-Managing_guests_with_virsh.html
+-	TODO virsh save/restore and other stuff https://www.centos.org/docs/5/html/5.2/Virtualization/chap-Virtualization-Managing_guests_with_virsh.html
 
 Use `--connect qemu:///system` argument with these commands to explicitly target the local daemon's system VMs (sometimes necessary)
 
@@ -637,6 +657,15 @@ For virsh commands, the editor can be changed using VISUAL or EDITOR environment
 For libguestfs commands, the editor can be changed using the EDITOR environment variable.
 
 E.g. `export EDITOR="nano -w"`, revert with `unset EDITOR`
+
+**Other**
+
+Libvirt changes the ownership of image files as part of it's operations, regardless of original ownership.
+
+- When the virtual machine is started, the ownership is changed to `libvirt-qemu:kvm`.
+- When the virtual machine is stopped, the ownership is changed to `root:root`.
+
+Therefore you may need to change the image file ownership prior to executing any commands directly against the image file (such as the libguestfs commands) or run the commands as root.
 
 Deleting a virtual machine
 ------------------------------
@@ -732,6 +761,21 @@ An example domain xml file:
 </domain>
 {% endhighlight %}
 
+Valid units for memory: b, KB, KiB, MB, MiB, GB, GiB etc.
+
+>**From the documentation:**  
+>  
+>Valid units are "b" or "bytes" for bytes,
+>"KB" for kilobytes (103 or 1,000 bytes), "k" or "KiB" for kibibytes (1024 bytes),
+>"MB" for megabytes (106 or 1,000,000 bytes), "M" or "MiB" for mebibytes (220 or 1,048,576 bytes),
+>"GB" for gigabytes (109 or 1,000,000,000 bytes), "G" or "GiB" for gibibytes (230 or 1,073,741,824 bytes),
+>"TB" for terabytes (1012 or 1,000,000,000,000 bytes), or "T" or "TiB" for tebibytes (240 or 1,099,511,627,776 bytes).
+>However, the value will be rounded up to the nearest kibibyte by libvirt, and may be further rounded to the granularity
+>supported by the hypervisor. Some hypervisors also enforce a minimum, such as 4000KiB.
+
+See [Libvirt Domain XML Format] for more information on the file format.
+
+
 References & Resources
 ====================
 
@@ -753,6 +797,7 @@ Documentation
 - [KVM VT-d]
 - [Ubuntu libvirt guide]
 - [libguestfs]
+- [Libvirt Domain XML Format]
 
 Man Pages
 ------------------------------
@@ -762,6 +807,9 @@ Man Pages
 - [virsh]
 - [virt-clone]
 - [virt-sysprep]
+- [virt-filesystems]
+- [virt-df]
+- [virt-resize]
 
 Other
 ------------------------------
@@ -797,13 +845,20 @@ Related Documents
 [qemu-system-x86_64]: http://manpages.ubuntu.com/manpages/trusty/en/man1/qemu-system-x86_64.1.html
 [virt-install]: http://manpages.ubuntu.com/manpages/trusty/en/man1/virt-install.1.html "test"
 [virsh]: http://manpages.ubuntu.com/manpages/trusty/en/man1/virsh.1.html
+
 [virt-clone]: http://manpages.ubuntu.com/manpages/trusty/man1/virt-clone.1.html
 [virt-sysprep]: http://libguestfs.org/virt-sysprep.1.html
+[virt-filesystems]: http://libguestfs.org/virt-filesystems.1.html
+[virt-df]: http://libguestfs.org/virt-df.1.html
+[virt-resize]: http://libguestfs.org/virt-resize.1.html
+
+
 [How to get started with libvirt on Linux]: http://rabexc.org/posts/how-to-get-started-with-libvirt-on
 [File System Pass-Through in KVM/Qemu/libvirt]: http://troglobit.github.io/blog/2013/07/05/file-system-pass-through-in-kvm-slash-qemu-slash-libvirt/
 [Sharing directories with virtual machines and libvirt]: http://rabexc.org/posts/p9-setup-in-libvirt
 [libguestfs]: http://libguestfs.org/
 [How to clone virtual machines in KVM - tutorial]: http://www.dedoimedo.com/computers/kvm-clone.html
+[Libvirt Domain XML Format]: https://libvirt.org/formatdomain.html
 
 [Convert VirtualBox Image to KVM Image]: http://blog.bodhizazen.net/linux/convert-virtualbox-vdi-to-kvm-qcow/
 
