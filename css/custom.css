@@ -1,6 +1,9 @@
 main *{
   font-family: Verdana, Geneva, sans-serif;
 }
+main {
+  margin-top: 1.25rem;
+}
 
 div.highlight {
   background-color: #f8f8f8;
@@ -58,15 +61,6 @@ blockquote.indent *
 {
   color: black;
 }
-.row
-{
-  max-width: 100%;
-  margin-left: 0.0rem;
-}
-.content
-{
-  max-width: 62.5rem;
-}
 figure.document-figure
 {
   border-color: #dfdfdf;
@@ -98,19 +92,67 @@ figure.document-figure figcaption
   font-family: Verdana, Geneva, sans-serif;
   background-color: #f8f8f8;
 }
-ul.side-nav
+/*
+div.toc ul.side-nav
 {
   padding: 0 0 0.875rem 0;
 }
-ul.side-nav li
+div.toc ul.side-nav li
 {
   margin: 0rem;
 }
-ul.side-nav li a:not(.button)
+div.toc ul.side-nav li a:not(.button)
 {
   padding-left: 0rem;
 }
-ul.side-nav li.divider
+div.toc ul.side-nav li.divider
 {
   margin-top: 0.4375rem;
 }
+*/
+nav.tab-bar
+{
+  background: #444444;
+}
+ul.off-canvas-list li
+{
+}
+ul.off-canvas-list li a {
+    border-bottom: 0px;
+}
+ul.off-canvas-list li a:hover {
+    background: #333333;
+}
+ul.off-canvas-list li a h1 {
+    text-transform: uppercase;
+    font-family: "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif;
+    font-size: 0.8125rem;
+    color: #FFFFFF;
+    padding: 0px;
+    margin: 0px;
+}
+ul.off-canvas-list li a h2 {
+    color: #FFFFFF;
+    font-family: "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif;
+    font-size: 0.8125rem;
+    padding: 0px;
+    margin: 0px;
+}
+ul.off-canvas-list li.divider {
+    border-bottom: 1px solid #444444;
+}
+aside.left-off-canvas-menu
+{
+  background: #555555;
+}
+div.contentheader
+{
+  background: #f2f2f2;
+  border-bottom-width: 1px;
+  border-bottom-color: #d8d8d8;
+  border-bottom-style: solid;
+  //margin-bottom: 1.25rem;
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+.move-right .exit-off-canvas, .move-left .exit-off-canvas { box-shadow: none; }

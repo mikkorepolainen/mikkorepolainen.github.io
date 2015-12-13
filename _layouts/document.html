@@ -13,32 +13,56 @@
   </head>
   <body>
     {% include header.html %}
-    <header class="panel clearfix">
-      <div>
-        <strong>{{ page.title }}</strong>
-        <span class="secondary label">
-          {% if page.modified %}Last Modified: {{ page.modified | date: "%Y-%m-%d" }}
-          {% else %} {{ page.date | date: "%Y-%m-%d" }}
-          {% endif %}
-        </span>
+    <nav class="tab-bar">
+      <section class="left">
+        <a class="left-off-canvas-toggle menu-icon"><span></span></a>
+      </section>
+      <section class="tab-bar-section middle">
+        <div class="left">{{ page.title }}</div>
+      </section>
+    </nav>
+    <div class="off-canvas-wrap" data-offcanvas>
+      <div class="inner-wrap">
+        <aside class="left-off-canvas-menu">
+          <div id="toc" />
+        </aside>
+        <section class="main-section">
+          <div class="contentheader clearfix">
+            <div class="row">
+              <div class="large-12 columns">
+                <strong>{{ page.title }}</strong>
+                <span class="secondary label">
+                  {% if page.modified %}Last Modified: {{ page.modified | date: "%Y-%m-%d" }}
+                  {% else %} {{ page.date | date: "%Y-%m-%d" }}
+                  {% endif %}
+                </span>
+              </div>
+              {% if page.description %}
+              <div class="large-12 columns">
+                {{ page.description }}
+              </div>
+              {% endif %}
+              {% if page.tags.size > 0 %}
+              <div class="large-12 columns">
+                {% for t in page.tags %}<span class="label">{{t}}</span> {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="row">
+            <!--
+            <nav class="sidebar large-2 medium-3 columns">
+              <div class="hide-for-small toc" id="toc">
+              </div>
+            </nav>
+            -->
+            <main class="main-section large-12 columns" id="contents">
+              {{ content }}
+            </main>
+          </div>
+        </section>
+        <a class="exit-off-canvas"></a>
       </div>
-      {% if page.description %}
-      <div>
-        {{ page.description }}
-      </div>
-      {% endif %}
-      {% if page.tags.size > 0 %}
-      <div>
-        {% for t in page.tags %}<span class="label">{{t}}</span> {% endfor %}
-      </div>
-      {% endif %}
-    </header>
-    <div class="row">
-      <nav class="sidebar large-2 medium-3 columns" id="toc">
-      </nav>
-      <main class="content large-10 medium-9 columns end" id="contents">
-        {{ content }}
-      </main>
     </div>
     {% include footer.html %}
 
@@ -48,6 +72,7 @@
       // http://stackoverflow.com/questions/187619/is-there-a-javascript-solution-to-generating-a-table-of-contents-for-a-page
       function TableOfContents(input, output) {
         var toc = '';
+        var octoc = '';
         var container = document.querySelector(input) || document.querySelector('#contents');
         var output = output || '#toc';
         var level1_anchor = '';
@@ -65,21 +90,27 @@
               {
                 level1_anchor = anchor;              
                 if (toc.length != 0) toc += '<li class="divider"></li>';
-                toc += '<li role="menuitem"><a href="#' + anchor + '"><b>' + titleText + '</b></a>';
+                //toc += '<li role="menuitem"><a href="#' + anchor + '"><b>' + titleText + '</b></a></li>';
+                toc += '<li><a href="#' + anchor + '"><h1>' + titleText + '</h1></a></li>';
               }
               else
               {
                 anchor = level1_anchor + "_" + anchor;
-                toc += '<li role="menuitem"><a href="#' + anchor + '">' + titleText + '</a>';
+                //toc += '<li role="menuitem"><a href="#' + anchor + '">' + titleText + '</a></li>';
+                toc += '<li><a href="#' + anchor + '"><h2>' + titleText + '</h2></a></li>';
               }
               return '<h' + level + '><a href="#' + anchor + '" id="' + anchor + '"></a>' + titleText + '</h' + level + '>';
             }
           );
 
-        toc = '<ul class="side-nav" role="navigation" title="Contents">' + toc + '</ul>';
+        //toc = '<ul class="side-nav" role="navigation" title="TOC">' + toc + '</ul>';
+        toc = '<ul class="off-canvas-list"><!--<li><label>Table of Contents</label></li>-->' + toc + '</ul>';
         document.querySelector(output).innerHTML += toc;
       };
       TableOfContents('#contents', '#toc');
+      $(".off-canvas-list a").on("click.toggleCanvas", function(){
+        $(".exit-off-canvas").click();
+      });
     </script>
     <script>
       $(document).foundation();

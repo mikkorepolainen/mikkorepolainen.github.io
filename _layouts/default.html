@@ -13,19 +13,26 @@
   </head>
   <body>
     {% include header.html %}
-    {% if page.title or page.description %}
-    <header class="panel clearfix">
-      {% if page.title %}
-      <div>
-        <strong>{{ page.title }}</strong>
+    {% if page.title %}
+    <nav class="tab-bar">
+      <section class="tab-bar-section middle">
+        <div class="left">{{ page.title }}</div>
+      </section>
+    </nav>
+    {% endif %}
+    {% if page.description or page.tags.size > 0 %}
+    <div class="contentheader clearfix">
+      <div class="row">
+        <div class="large-12 columns">
+          {{ page.description }}
+        </div>
+        {% if page.tags.size > 0 %}
+        <div class="large-12 columns">
+          {% for t in page.tags %}<span class="label">{{t}}</span> {% endfor %}
+        </div>
+        {% endif %}
       </div>
-      {% endif %}
-      {% if page.description %}
-      <div>
-        {{ page.description }}
-      </div>
-      {% endif %}
-    </header>
+    </div>
     {% endif %}
     <main>
       {{ content }}

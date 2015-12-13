@@ -13,26 +13,34 @@
   </head>
   <body>
     {% include header.html %}
-    <header class="panel clearfix">
-      <div>
-        {{ page.date | date: "%Y-%m-%d" }} <strong>{{ page.title }}</strong>
+    <nav class="tab-bar">
+      <section class="tab-bar-section middle">
+        <div class="left">{{ page.title }}</div>
+      </section>
+    </nav>
+    <div class="contentheader clearfix">
+      <div class="row">
+        <div class="large-12 columns">
+          <strong>{{ page.title }}</strong>
+          <span class="secondary label">
+            {{ page.date | date: "%Y-%m-%d" }}
+          </span>
+        </div>
+        <div class="large-12 columns">
+          {{ page.description }}
+        </div>
+        {% if page.tags.size > 0 %}
+        <div class="large-12 columns">
+          {% for t in page.tags %}<span class="label">{{t}}</span> {% endfor %}
+        </div>
+        {% endif %}
       </div>
-      {% if page.description %}
-      <div>
-        {{ page.description }}
-      </div>
-      {% endif %}
-      {% if page.tags.size > 0 %}
-      <div>
-        {% for t in page.tags %}<span class="label">{{t}}</span> {% endfor %}
-      </div>
-      {% endif %}
-    </header>
-    <main class="row">
-      <div class="content large-10 medium-9 large-offset-2 medium-offset-3 columns end">
+    </div>
+    <div class="row">
+      <main class="large-12 columns">
         {{ content }}
-      </div>
-    </main>
+      </main>
+    </div>
     {% include footer.html %}
 
     <script src="{{page.relativeroot}}js/vendor/jquery.js"></script>
