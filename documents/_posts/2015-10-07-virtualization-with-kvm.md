@@ -144,6 +144,46 @@ Restart networking `/etc/init.d/networking restart`.
 
 After starting a guest vm, a virtual interface should show on the bridge as well (e.g. vnetX or tapX).
 
+Additional Bridge Setup Steps
+--------------------------
+
+These steps may improve the performance of the bridge (see [Libvirt Networking]) TODO Verify.
+
+Add the following to `/etc/sysctl.conf`:
+
+{% highlight bash %}
+net.bridge.bridge-nf-call-ip6tables = 0
+net.bridge.bridge-nf-call-iptables = 0
+net.bridge.bridge-nf-call-arptables = 0
+{% endhighlight %}
+
+and run `sysctl -p /etc/sysctl.conf`.
+
+Add the following to `/etc/rc.local` before the line with `exit 0`:
+
+{% highlight bash %}
+/sbin/sysctl -p /etc/sysctl.conf
+iptables -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS  --clamp-mss-to-pmtu
+{% endhighlight %}
+
+Create a Virtual Network Using the Existing Bridge
+---------------------------------
+
+This is an optional step and is not required for bridged networking.
+However a virtual network must exist for operations that rely on a named network, such as creating virtual machines with docker-machine.
+
+Create the following network specification:
+
+{% highlight xml %}
+<network>
+  <name>host-bridge</name>
+  <forward mode="bridge"/>
+  <bridge name="br0"/>
+</network>
+{% endhighlight %}
+
+Then run `virsh net-create <file name>`
+
 Guest Configuration	
 ------------------------------
 
@@ -160,17 +200,21 @@ The manually created mac address can be specified in the virsh domain xml:
 <interface type='bridge'>
   <mac address='00:11:22:33:44:55'/>
   <source bridge='br0'/>
-  ...
+  <target dev='vnetX'/>
+  <model type='virtio'/>
+  <alias name='net0'/>
+  <address ... />
 </interface>
 {% endhighlight %}
 
 When installing the VM with `virt-install`, the following parameters can be used: `--network bridge=br0,model=virtio,[mac=<predefined mac address>]`
+(or `--network network=<network name>,model=virtio` if you have created a libvirt virtual network using the bridge).
 
 In VMM the bridge is configured during installation or later in the NIC section:
 
 {% include figure.html id="vmm-bridge" url="../images/vmm-bridge.png" caption="VMM Bridge Configuration" description="Select the bridge in the NIC configuration of the virtual machine." %}
 
-For more network related instructions, see [KVM Networking] and [KVM Networking (Ubuntu)].
+For more network related instructions, see [Libvirt Networking], [KVM Networking] and [KVM Networking (Ubuntu)].
 
 Creating Guests
 ====================
@@ -310,7 +354,7 @@ The `-boot c` option is the default and instructs the OS to boot from the first 
 You can use the `-snapshot` option to prevent any changes to be written on the disk image itself (writes to temp files instead).
 In a headless environment, you can use the `-nographic` option to run in terminal mode if the guest OS supports it (exit terminal mode with `Ctrl-A` `X`).
 
-If you need to [find the IP address of a running VM][Find the IP of a running VM] and the mac address is known, run `arp -an | grep <mac address of the VM>`
+If you need to [Find the IP of a running VM] and the mac address is known, run `arp -an | grep <mac address of the VM>`
 
 An example for installing and running a Windows XP guest:
 {% highlight bash %}
@@ -323,7 +367,7 @@ sudo kvm -hda xp.img -boot c -m 1024
 {% endhighlight %}
 
 The resulting image can be imported to be managed under libvirt using either `virt-install` or VMM.
-A third method is to create a domain xml file manually and use the virsh commands (see section [Managing Guests](#kvm-management)) to define the virtual machine.
+A third method is to create a domain xml file manually and use the virsh commands (see section [Managing Guests](#Managing_Guests)) to define the virtual machine.
 
 ###With virt-install
 
@@ -434,7 +478,8 @@ Curious people can look in `/var/log/libvirt/qemu/<guest name>.log` to see the k
 
 To import an existing image, select the "Import existing disk image" option when creating a new VM.
 
-### With vm-builder  
+### With vm-builder
+
 TODO https://www.howtoforge.com/virtualization-with-kvm-on-ubuntu-12.10 for vmbuilder, LVM-based virtual machines
 
 Console Access to Linux Guest From Host
@@ -561,7 +606,7 @@ All of the options above generate a new Name, MAC and UUID automatically. Howeve
 Cloning the Virtual Machine
 ------------------------------
 
-Shut down the source guest VM before cloning.
+Shut down the source guest VM before cloning, e.g. `virsh shutdown <source guest name>`.
 
 **With [virt-clone]**
 
@@ -583,6 +628,8 @@ A better approach (for linux guests) is to use `virt-edit` from the `libguestfs-
 - `virt-edit -d <new guest name> /etc/hosts`
 
 Instead of the `-d` option for guest name you can use the `-a` option to supply a path to the disk image directly.
+Unfortunately the EDITOR environment variable does not affect virt-edit so the command brings up the vi editor by default.
+TODO maybe there's another env variable... quick googling did not yield any results.
 
 Libguestfs provides a lot more useful tools for vm image manipulation. See here: [libguestfs].
 If you do not have access to `libguestfs-tools`, there's another method described here: [How to clone virtual machines in KVM - tutorial].
@@ -798,6 +845,7 @@ Documentation
 - [Ubuntu libvirt guide]
 - [libguestfs]
 - [Libvirt Domain XML Format]
+- [Libvirt Networking]
 
 Man Pages
 ------------------------------
@@ -841,6 +889,7 @@ Related Documents
 [KVM Virsh Help]: https://help.ubuntu.com/community/KVM/Virsh
 [KVM VT-d]: http://www.linux-kvm.org/page/How_to_assign_devices_with_VT-d_in_KVM
 [Ubuntu libvirt guide]: https://help.ubuntu.com/lts/serverguide/libvirt.html
+[Libvirt Networking]: http://wiki.libvirt.org/page/Networking
 
 [qemu-system-x86_64]: http://manpages.ubuntu.com/manpages/trusty/en/man1/qemu-system-x86_64.1.html
 [virt-install]: http://manpages.ubuntu.com/manpages/trusty/en/man1/virt-install.1.html "test"
