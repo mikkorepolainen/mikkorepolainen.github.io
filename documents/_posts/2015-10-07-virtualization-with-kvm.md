@@ -147,7 +147,9 @@ After starting a guest vm, a virtual interface should show on the bridge as well
 Additional Bridge Setup Steps
 --------------------------
 
-These steps may improve the performance of the bridge (see [Libvirt Networking]) TODO Verify.
+These steps may improve the performance of the bridge (see [Libvirt Networking]).
+
+TODO Verify
 
 Add the following to `/etc/sysctl.conf`:
 
@@ -300,7 +302,7 @@ The information in section Cloning Guests applies also for using pre-installed i
 
 TODO How to set up grub so that boot sequence never gets stuck in the boot menu.
 
-###Manually
+### Manually
 
 Create a disk image with `qemu-img create -f qcow2 vdisk.img <disk size gigabytes>G`.
 
@@ -369,7 +371,7 @@ sudo kvm -hda xp.img -boot c -m 1024
 The resulting image can be imported to be managed under libvirt using either `virt-install` or VMM.
 A third method is to create a domain xml file manually and use the virsh commands (see section [Managing Guests](#Managing_Guests)) to define the virtual machine.
 
-###With virt-install
+### With virt-install
 
 The `virt-install` command can be used to create new or to import existing virtual machines.
 The following command creates a new image and installs a system on it.
@@ -423,7 +425,7 @@ The newly created VM should show up in both `virsh list --all` and VMM.
 
 You can use the `--nographics` option to open the guest console directly in the terminal if the guest OS supports it (exit terminal mode with Ctrl-A X).
 
-###With VMM (virt-manager)
+### With VMM (virt-manager)
 
 Launch `virt-manager` or Virtual Machine Manager from system menu on xfce.
 The tool creates new images in the default storage pool `/var/lib/libvirt/images/` by default.
@@ -499,7 +501,7 @@ Use `echo $TERM` output on host to determine which terminal to use in the comman
 
 See [KVM Access] for more details.
 
-###On Guest
+### On Guest
 
 Create file `/etc/init/ttyS0.conf` with contents:
 {% highlight bash %}
@@ -511,7 +513,7 @@ exec /sbin/getty -L 115200 ttyS0 xterm
 
 Execute `start ttyS0`
 
-###On Host
+### On Host
 
 Execute `virsh connect <domain>`. Press enter to get login prompt.  
 
@@ -543,7 +545,7 @@ In the guest definition XML the same is achieved with:
 Share a Directory on Host to a Guest VM
 ------------------------------
 
-###Linux Guest
+### Linux Guest
 
 Add the following under the devices section in domain xml.
 The label is used with the mount command later on the guest.
@@ -581,7 +583,7 @@ See these blog posts for more information:
 - [File System Pass-Through in KVM/Qemu/libvirt]
 - [Sharing directories with virtual machines and libvirt]
 
-###Windows Guest
+### Windows Guest
 
 TODO
 
@@ -644,7 +646,7 @@ For more information, see the following documents:
 - [virt-df]
 - [virt-resize]
 
-###Expand a single partition (linux)
+### Expand a single partition (linux)
 
 Example of increasing the disk space on a single partition inside a basic linux VM.
 LVM must not be in use and the image must be in the qcow2 format.
