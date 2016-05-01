@@ -178,13 +178,16 @@ Create the following network specification:
 
 {% highlight xml %}
 <network>
-  <name>host-bridge</name>
+  <name>[network name]</name>
   <forward mode="bridge"/>
   <bridge name="br0"/>
 </network>
 {% endhighlight %}
 
-Then run `virsh net-create <file name>`
+Running `virsh net-create <file name>` creates a transient virtual network based on the file, which is sufficient at least for the docker-machine case mentioned above
+(the resulting VM configuration refers to the underlying bridge instead of the virtual network).
+
+If you want to create a persistent virtual network, then run `virsh net-define <file name>` followed by `virsh net-autostart <network name>` and `virsh net-start <network name>`.
 
 Guest Configuration	
 ------------------------------
@@ -211,6 +214,8 @@ The manually created mac address can be specified in the virsh domain xml:
 
 When installing the VM with `virt-install`, the following parameters can be used: `--network bridge=br0,model=virtio,[mac=<predefined mac address>]`
 (or `--network network=<network name>,model=virtio` if you have created a libvirt virtual network using the bridge).
+TODO network gets configured the same way even without the --network parameter if the network is persistent (eth0).
+TODO Docker-machine created network docker-machines is assigned to interface called docker0 automatically on unrelated VMs. Why?
 
 In VMM the bridge is configured during installation or later in the NIC section:
 
