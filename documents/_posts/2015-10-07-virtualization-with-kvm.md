@@ -112,7 +112,7 @@ The bridge connects the virtual machines' virtual network interfaces (taps) dire
 through the host server's primary network interface as if the virtual machines were
 physically present in the local area network along with the host.
 
-{% include figure.html id="kvm-virtualization-bridge" url="../images/kvm-virtualization-bridge.svg" caption="Network Bridge" description="The bridge binds the virtual NICs (\"taps\") of the VMs to the physical network interface." %}
+{% include figure.html id="kvm-virtualization-bridge" url="images/kvm-virtualization-bridge.svg" caption="Network Bridge" description="The bridge binds the virtual NICs (\"taps\") of the VMs to the physical network interface." %}
 
 Check the device name of the primary network interface using `nmcli dev status`.
 The device name in this case is em1 (biosdevname naming for integrated network interfaces).
@@ -212,7 +212,7 @@ When installing the VM with `virt-install`, the following parameters can be used
 
 In VMM the bridge is configured during installation or later in the NIC section:
 
-{% include figure.html id="vmm-bridge" url="../images/vmm-bridge.png" caption="VMM Bridge Configuration" description="Select the bridge in the NIC configuration of the virtual machine." %}
+{% include figure.html id="vmm-bridge" url="images/vmm-bridge.png" caption="VMM Bridge Configuration" description="Select the bridge in the NIC configuration of the virtual machine." %}
 
 For more network related instructions, see [Libvirt Networking], [KVM Networking] and [KVM Networking (Ubuntu)].
 
@@ -429,16 +429,16 @@ Launch `virt-manager` or Virtual Machine Manager from system menu on xfce.
 The tool creates new images in the default storage pool `/var/lib/libvirt/images/` by default.
 
 <ul class="clearing-thumbs small-block-grid-4" data-clearing>
-  <li><a href="../images/vmm-new-vm-01.png"><img data-caption="" src="../images/vmm-new-vm-01.png"></a></li>
-  <li><a href="../images/vmm-new-vm-02.png"><img data-caption="" src="../images/vmm-new-vm-02.png"></a></li>
-  <li><a href="../images/vmm-new-vm-03.png"><img data-caption="" src="../images/vmm-new-vm-03.png"></a></li>
-  <li><a href="../images/vmm-new-vm-04.png"><img data-caption="" src="../images/vmm-new-vm-04.png"></a></li>
-  <li><a href="../images/vmm-new-vm-05.png"><img data-caption="" src="../images/vmm-new-vm-05.png"></a></li>
-  <li><a href="../images/vmm-new-vm-06.png"><img data-caption="" src="../images/vmm-new-vm-06.png"></a></li>
-  <li><a href="../images/vmm-new-vm-07.png"><img data-caption="" src="../images/vmm-new-vm-07.png"></a></li>
-  <li><a href="../images/vmm-new-vm-08.png"><img data-caption="" src="../images/vmm-new-vm-08.png"></a></li>
-  <li><a href="../images/vmm-new-vm-09.png"><img data-caption="" src="../images/vmm-new-vm-09.png"></a></li>
-  <li><a href="../images/vmm-new-vm-10.png"><img data-caption="Install the guest operating system" src="../images/vmm-new-vm-10.png"></a></li>
+  <li><a href="images/vmm-new-vm-01.png"><img data-caption="" src="images/vmm-new-vm-01.png"></a></li>
+  <li><a href="images/vmm-new-vm-02.png"><img data-caption="" src="images/vmm-new-vm-02.png"></a></li>
+  <li><a href="images/vmm-new-vm-03.png"><img data-caption="" src="images/vmm-new-vm-03.png"></a></li>
+  <li><a href="images/vmm-new-vm-04.png"><img data-caption="" src="images/vmm-new-vm-04.png"></a></li>
+  <li><a href="images/vmm-new-vm-05.png"><img data-caption="" src="images/vmm-new-vm-05.png"></a></li>
+  <li><a href="images/vmm-new-vm-06.png"><img data-caption="" src="images/vmm-new-vm-06.png"></a></li>
+  <li><a href="images/vmm-new-vm-07.png"><img data-caption="" src="images/vmm-new-vm-07.png"></a></li>
+  <li><a href="images/vmm-new-vm-08.png"><img data-caption="" src="images/vmm-new-vm-08.png"></a></li>
+  <li><a href="images/vmm-new-vm-09.png"><img data-caption="" src="images/vmm-new-vm-09.png"></a></li>
+  <li><a href="images/vmm-new-vm-10.png"><img data-caption="Install the guest operating system" src="images/vmm-new-vm-10.png"></a></li>
 </ul>
 
 Execute `virsh list` to see the image now running under virsh.
@@ -530,7 +530,7 @@ When running manually with `kvm` add parameters `-usb -usbdevice tablet`.
 
 In VMM add new input device:
 
-{% include figure.html id="vmm-tablet-input" url="../images/vmm-tablet-input.png" caption="Adding a Tablet Input Device in VMM" description="Open the VM configuration in VMM, click Add Hardware and select the EvTouch tablet device from the Input section." %}
+{% include figure.html id="vmm-tablet-input" url="images/vmm-tablet-input.png" caption="Adding a Tablet Input Device in VMM" description="Open the VM configuration in VMM, click Add Hardware and select the EvTouch tablet device from the Input section." %}
 
 In the guest definition XML the same is achieved with:
 
