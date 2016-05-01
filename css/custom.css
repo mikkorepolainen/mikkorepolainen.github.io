@@ -5,7 +5,7 @@ main {
   margin-top: 1.25rem;
 }
 
-div.highlight {
+figure.highlight {
   background-color: #f8f8f8;
   border-color: #dfdfdf;
   border-style: solid;
@@ -16,7 +16,7 @@ div.highlight {
   max-height: 50vh;
 }
 
-div.highlight pre code{
+figure.highlight pre code{
   background-color: transparent;
   border-color: transparent;
   border-style: none;
