@@ -8,7 +8,7 @@ relativeroot: ../
 <div class="content large-12 columns">
 
 {% for p in site.categories.documents %}
-{% if p.published && !p.hidden %}
+{% if p.published and !p.hidden %}
 <p><strong><a href="{{page.relativeroot}}{{ p.url | remove_first:'/' }}">{{ p.title }}</a></strong>
 <span class="secondary label">
   {% if p.modified %}Last Modified: {{ p.modified | date: "%Y-%m-%d" }}
