@@ -1,0 +1,133 @@
+---
+layout: document
+title: Docker Containers
+description: Notes about docker container management with docker tools.
+modified: 2016-05-15 23:59:00
+relativeroot: ../../
+permalink: documents/docker-containers
+type: document
+tags:
+- Docker
+- Containers
+category: documents
+published: true
+hidden: true
+---
+
+Building Images
+==================
+
+- `docker build -t <image-name> <build-context-path>` Build an image. Build context path is where the Dockerfile is located (e.g. `.` if in current directory) <sub>[reference](https://docs.docker.com/engine/reference/commandline/build/)</sub>.
+- `docker images` List available images <sub>[reference](https://docs.docker.com/engine/reference/commandline/images/)</sub>.
+- `docker rmi <image-name>` Remove image <sub>[reference](https://docs.docker.com/engine/reference/commandline/rmi/)</sub>.
+
+TODO On windows, you get the following message when building images for non-windows hosts: SECURITY WARNING: You are building a Docker image from Windows against a non-Windows Docker host. All files and directories added to build context will have '-rwxr-xr-x' permissions. It is recommended to double check and reset permissions for sensitive files and directories.
+
+Creating & Running Containers
+=============================
+
+https://docs.docker.com/engine/reference/commandline/run/
+
+- `docker create --name <container-name> <image-name>` Create a container <sub>[reference](https://docs.docker.com/engine/reference/commandline/create/)</sub>.
+- `docker start ... <container-name>` Start a created container <sub>[reference](https://docs.docker.com/engine/reference/commandline/start/)</sub>.
+- `docker run -d --name <container-name> ... <image-name>` Shorthand for create + start <sub>[reference](https://docs.docker.com/engine/reference/commandline/run/)</sub>. Without `-d` connects to container and shows console output. Ctrl-C disconnects terminal but leaves container running.
+- `docker ps --all` Show existing containers <sub>[reference](https://docs.docker.com/engine/reference/commandline/ps/)</sub>.
+
+Running continuously
+--------------------
+
+Use the `--restart="<no, on-failure[:max-retry], always, unless-stopped>"` switch on create <sub>[reference](https://docs.docker.com/engine/reference/commandline/create/)</sub> or run <sub>[reference](https://docs.docker.com/engine/reference/commandline/run/)</sub>. TODO what about host reboot?
+
+Short-Term Interactive Containers
+---------------------------------
+
+- `docker run -ti --rm <image-name>` The [`--rm`](https://docs.docker.com/engine/reference/run/#clean-up-rm) flag cleans up the container after exiting.
+
+Resource management
+===================
+
+Memory, CPU etc.
+----------------
+
+Various options can be used to tweak the resources utilized by the container <sub>[reference](https://docs.docker.com/engine/reference/run/)</sub>. For example the following flags can be used with either the run or the create command.
+
+- `-m "300M"`
+- `--memory-swap "1G"`
+
+Exposing ports
+--------------
+
+TODO
+
+-P, --publish-all             Publish all exposed ports to random ports
+-p, --publish=[]              Publish a container's port(s) to the host
+
+
+Volumes
+-------
+
+Mount a directory (or file? TODO how does this work) either in the image (dockerfile)
+or when creating the container (create/run)
+Changes in the host are reflected immediately in the container.
+
+###Dockerfile
+
+```
+VOLUME ["<path in container>"]
+```
+
+The mounted volume will show as a directory in the volumes directory, for example, `/var/lib/docker/volumes/<volume-name>/_data/` and is populated with files from the container image.
+The `<volume-name>` is a generated identifier.
+The path must be an absolute path.
+
+The specified volume definition will be overridden if using the same `<path in container>` when creating/running the container using the `-v` option.
+
+###Run or Create
+
+- `-v <path in container>`: host volume name is generated, contents from image are copied over.
+- `-v <name>:<path in container>` where name does not start with a forward slash: host volume name is `<name>` under volumes directory. If the named volume exists already, the contents will not be affected by image contents even when container is removed and re-created. Otherwise, the contents are copied over from the image.
+- `-v <path on host>:<path in container>`: host volume in specified (absolute) path. Image contents are not copied on host at all (host directory completely overrides the directory in the container).
+
+###Existing volumes
+
+Stopping and removing the container does not remove the associated volumes (unless the [--rm](https://docs.docker.com/engine/reference/run/#clean-up-rm) switch was used when creating the container).
+Removing the volume directory on the host is not sufficient either (it will still be mapped on the host). To remove a volume (or allow a named volume to be re-populated from the image when re-creating a container), use the `docker volume rm` command.
+
+Use `docker volume ls` to list existing volume mappings
+
+Use `docker volume rm <volume-name>` to remove volume
+
+Node
+=====
+
+https://hub.docker.com/_/node/
+https://nodejs.org/en/docs/guides/nodejs-docker-webapp/
+https://github.com/nodejs/docker-node/blob/master/docs/BestPractices.md
+https://github.com/nodejs/docker-node
+
+Managing and Monitoring Containers
+===========================
+
+- `docker inspect <container-name>` Show container information <sub><sub>[reference](https://docs.docker.com/engine/reference/commandline/inspect/)</sub></sub>.
+- `docker attach <container-name>` Attach terminal to container <sub>[reference](https://docs.docker.com/engine/reference/commandline/attach/)</sub>. NOTE detaching from the terminal does not work as described in the docs. For example, if attached from remote terminal with docker toolbox tools, Ctrl-C detaches the terminal instead of killing the process (Ctrl-P + Ctrl-Q does nothing). If ssh'ed on remote host and attached from there, the terminal cannot be detached or the process killed with any key combination (must kill the terminal). TODO container must be started with `-i` flag for this to work predictably? `-t` required as well? [see here](https://docs.docker.com/engine/quickstart/#running-an-interactive-shell)
+- `docker logs --tail=<no-of-lines> <vm-name>` show console output. Add `--follow` flag to keep following the log (use Ctrl-C to exit) <sub>[reference](https://docs.docker.com/engine/reference/commandline/logs/)</sub>.
+- `docker stop -t <timeout-seconds> <container-name>` Terminate container with SIGTERM and SIGKILL after timeout-seconds (default: 10 seconds) <sub>[reference](https://docs.docker.com/engine/reference/commandline/kill/)</sub>.
+- `docker kill <container-name>` Terminate container with SIGKILL <sub>[reference](https://docs.docker.com/engine/reference/commandline/kill/)</sub>.
+- `docker exec -it <container-name> bash` Open a terminal inside the container <sub>[reference](https://docs.docker.com/engine/reference/commandline/exec/)</sub>.
+- `docker stats <container-name> [<container-name> ...]` view runtime metrics for containers (CPU, Memory, Network) <sub>[reference](https://docs.docker.com/engine/reference/commandline/stats/)</sub>.
+
+Update an Existing Container
+------
+
+### Change properties
+
+- `docker rename <old-container-name> <new-container-name>` Rename a container <sub>[reference](https://docs.docker.com/engine/reference/commandline/rename/)</sub>
+
+### Rebuild a Container From an Image
+
+```
+docker stop/kill <container>
+docker rm <container>
+docker build -t <container>
+docker run ...
+```
