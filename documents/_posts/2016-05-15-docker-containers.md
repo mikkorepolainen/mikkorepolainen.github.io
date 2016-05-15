@@ -108,13 +108,28 @@ https://github.com/nodejs/docker-node
 Managing and Monitoring Containers
 ===========================
 
+Monitoring a Container
+--------------------
+
 - `docker inspect <container-name>` Show container information <sub><sub>[reference](https://docs.docker.com/engine/reference/commandline/inspect/)</sub></sub>.
-- `docker attach <container-name>` Attach terminal to container <sub>[reference](https://docs.docker.com/engine/reference/commandline/attach/)</sub>. NOTE detaching from the terminal does not work as described in the docs. For example, if attached from remote terminal with docker toolbox tools, Ctrl-C detaches the terminal instead of killing the process (Ctrl-P + Ctrl-Q does nothing). If ssh'ed on remote host and attached from there, the terminal cannot be detached or the process killed with any key combination (must kill the terminal). TODO container must be started with `-i` flag for this to work predictably? `-t` required as well? [see here](https://docs.docker.com/engine/quickstart/#running-an-interactive-shell)
 - `docker logs --tail=<no-of-lines> <vm-name>` show console output. Add `--follow` flag to keep following the log (use Ctrl-C to exit) <sub>[reference](https://docs.docker.com/engine/reference/commandline/logs/)</sub>.
+- `docker stats <container-name> [<container-name> ...]` view runtime metrics for containers (CPU, Memory, Network) <sub>[reference](https://docs.docker.com/engine/reference/commandline/stats/)</sub>.
+
+Stopping a Container
+-----------------------
+
 - `docker stop -t <timeout-seconds> <container-name>` Terminate container with SIGTERM and SIGKILL after timeout-seconds (default: 10 seconds) <sub>[reference](https://docs.docker.com/engine/reference/commandline/kill/)</sub>.
 - `docker kill <container-name>` Terminate container with SIGKILL <sub>[reference](https://docs.docker.com/engine/reference/commandline/kill/)</sub>.
+- `docker rm <container-name>` Remove a containerL <sub>[reference](https://docs.docker.com/engine/reference/commandline/rm/)</sub>.
+
+Accessing a Container's Terminal
+--------------------------------
+
 - `docker exec -it <container-name> bash` Open a terminal inside the container <sub>[reference](https://docs.docker.com/engine/reference/commandline/exec/)</sub>.
-- `docker stats <container-name> [<container-name> ...]` view runtime metrics for containers (CPU, Memory, Network) <sub>[reference](https://docs.docker.com/engine/reference/commandline/stats/)</sub>.
+- `docker attach <container-name>` Attach terminal to container <sub>[reference](https://docs.docker.com/engine/reference/commandline/attach/)</sub>. NOTE detaching from the terminal does not work as described in the docs. For example, if attached from remote terminal with docker toolbox tools, Ctrl-C detaches the terminal instead of killing the process (Ctrl-P + Ctrl-Q does nothing). If ssh'ed on remote host and attached from there, the terminal cannot be detached or the process killed with any key combination (must kill the terminal). TODO container must be started with `-i` flag for this to work predictably? `-t` required as well? [see here](https://docs.docker.com/engine/quickstart/#running-an-interactive-shell)
+
+TODO http://www.sebastien-han.fr/blog/2014/01/27/access-a-container-without-ssh/
+TODO http://jpetazzo.github.io/2014/06/23/docker-ssh-considered-evil/
 
 Update an Existing Container
 ------
