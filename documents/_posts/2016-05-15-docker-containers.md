@@ -51,8 +51,8 @@ Memory, CPU etc.
 
 Various options can be used to tweak the resources utilized by the container <sub>[reference](https://docs.docker.com/engine/reference/run/)</sub>. For example the following flags can be used with either the run or the create command.
 
-- `-m "300M"`
-- `--memory-swap "1G"`
+- `-m "300M" --memory-swap "1G"` Set memory limit and limit for combined memory + swap (units b/k/m/g) <sub>[reference](https://docs.docker.com/engine/reference/run/#user-memory-constraints).
+- `--cpu-shares=1024` CPU share weight (default 1024). By default all containers get an equal share. This option can be used to allocate CPU time differently. Applies only when CPU-intensive processes are running (containers compete on processing resources)<sub>[reference](https://docs.docker.com/engine/reference/run/#cpu-share-constraint)</sub>.
 
 Exposing ports
 --------------
