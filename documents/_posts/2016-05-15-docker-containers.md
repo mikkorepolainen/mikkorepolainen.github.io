@@ -14,14 +14,33 @@ published: true
 hidden: true
 ---
 
-Building Images
+Creating Images
 ==================
 
+Dockerfile Fundamentals
+-----------------------
+
+TODO
+
+Building the Image
+--------
+
 - `docker build -t <image-name> <build-context-path>` Build an image. Build context path is where the Dockerfile is located (e.g. `.` if in current directory) <sub>[reference](https://docs.docker.com/engine/reference/commandline/build/)</sub>.
+
+TODO On windows, you get the following message when building images for non-windows hosts: SECURITY WARNING: You are building a Docker image from Windows against a non-Windows Docker host. All files and directories added to build context will have '-rwxr-xr-x' permissions. It is recommended to double check and reset permissions for sensitive files and directories.
+
+Managing Images
+---------------
+
 - `docker images` List available images <sub>[reference](https://docs.docker.com/engine/reference/commandline/images/)</sub>.
 - `docker rmi <image-name>` Remove image <sub>[reference](https://docs.docker.com/engine/reference/commandline/rmi/)</sub>.
 
-TODO On windows, you get the following message when building images for non-windows hosts: SECURITY WARNING: You are building a Docker image from Windows against a non-Windows Docker host. All files and directories added to build context will have '-rwxr-xr-x' permissions. It is recommended to double check and reset permissions for sensitive files and directories.
+###Dangling Images
+
+In some situations, the image build process can leave untagged and unreferenced images behind. These images are shown in the image list with both repository and tag set to `<none>`. These dangling images can be pruned with the command `docker rmi $(docker images -f "dangling=true" -q)`.
+[See here](http://www.projectatomic.io/blog/2015/07/what-are-docker-none-none-images/) for more info.
+
+The equivalent command in a windows shell is `@FOR /f "tokens=*" %i IN ('docker images -f "dangling=true" -q') DO docker rmi %i`.
 
 Creating & Running Containers
 =============================
@@ -54,6 +73,19 @@ Various options can be used to tweak the resources utilized by the container <su
 - `-m "300M" --memory-swap "1G"` Set memory limit and limit for combined memory + swap (units b/k/m/g) <sub>[reference](https://docs.docker.com/engine/reference/run/#user-memory-constraints).
 - `--cpu-shares=1024` CPU share weight (default 1024). By default all containers get an equal share. This option can be used to allocate CPU time differently. Applies only when CPU-intensive processes are running (containers compete on processing resources)<sub>[reference](https://docs.docker.com/engine/reference/run/#cpu-share-constraint)</sub>.
 
+Environment Variables
+---------------------
+
+Set environment variables either in the image through the dockerfile or when creating the container (create/run).
+
+###Dockerfile
+
+Add environment variables by including `ENV ENV_VAR env_var_value` statements in the Dockerfile <sub>[reference](https://docs.docker.com/engine/reference/builder/#env)</sub>. The values can be used in some Dockerfile instructions as well by inserting `${ENV_VAR}` as parameter <sub>[reference](https://docs.docker.com/engine/reference/builder/#environment-replacement)</sub>.
+
+###Run or Create
+
+Add `-e ENV_VAR=env_var_value` to add or override an environment variable. <sub>[reference](https://docs.docker.com/engine/reference/run/#env-environment-variables)</sub>.
+
 Exposing ports
 --------------
 
@@ -67,7 +99,7 @@ Volumes
 -------
 
 Mount a directory (or file? TODO how does this work) either in the image (dockerfile)
-or when creating the container (create/run)
+or when creating the container (create/run).
 Changes in the host are reflected immediately in the container.
 
 ###Dockerfile
