@@ -35,7 +35,7 @@ TODO Suitability for production use?
 Installation
 ------------
 
-On linux, the docker-machine binary is a separate install (the docker toolbox contains docker-machine by default).
+On linux, the docker-machine binary is a separate install (the docker toolbox and the docker for windows/mac tools both install docker-machine by default).
 Check the latest version in [https://github.com/docker/machine/releases](https://github.com/docker/machine/releases) and follow the instructions, e.g.:
 
 {% highlight bash %}
@@ -68,13 +68,14 @@ For more options, refer to the [documentation](https://docs.docker.com/machine/d
 
 #### Creating a local VM on Hyper-V
 
-On modern computers running a recent version of windows, you can use the native Hyper-V platform instead of VirtualBox.
-Follow the instructions [here](https://stebet.net/installing-docker-tools-on-windows-using-hyper-v/) and [here](https://blogs.technet.microsoft.com/canitpro/2014/03/10/step-by-step-enabling-hyper-v-for-use-on-windows-8-1/). Remember to run all commands in a terminal launched as administrator, including listing containers (hyper-v controlled instances won't show unless running as administrator).
+On modern computers running a recent version of windows, you can use the native Hyper-V platform instead of VirtualBox. This requires installing the HyperV virtualization windows features and enabling virtualization extensions in BIOS. Note that VirtualBox won't work while HyperV is enabled. TODO link to instructions.
+
+Full instructions can be found [here](https://stebet.net/installing-docker-tools-on-windows-using-hyper-v/) and [here](https://blogs.technet.microsoft.com/canitpro/2014/03/10/step-by-step-enabling-hyper-v-for-use-on-windows-8-1/). Remember to run all commands in a terminal launched as administrator, including listing containers (hyper-v controlled instances won't show unless running as administrator).
 
 In a nutshell, you must create a virtual network switch in Hyper-V Manager (local machine -> Virtual Switch Manager... -> New virtual network switch). For the switch type, you can select either external (bridge the VM through a NIC on your computer) or internal (accessible only from host). TODO [NAT switch](https://4sysops.com/archives/native-nat-in-windows-10-hyper-v-using-a-nat-virtual-switch/).
 
 - To expose the VM to the surrounding network, select the External virtual switch type. In the switch configuration, select the appropriate External network (physical network adapter). The VM will be visible as <vm-name> in the surrounding network and gets an IP address from the network's dhcp service unless explicitly set. The VM is also vulnerable to changes in the network, e.g. if your computer is a laptop that you use in multiple networks. TODO does shutting down the machine help?
-- An internal switch does not expose the machine to the surrounding network but does not permit access outside either by default. You can use internet connection sharing to facilitate outbound network connections [example](https://www.packet6.com/allowing-windows-8-1-hyper-v-vm-to-work-with-wifi/). (Note that if you already have an external virtual switch using the same physical interface, then it seems that you need to share the virtual network interface instead of the physical one.) This way the VM is only accessible from the local machine but is not disturbed by changes in the network, which is likely, for example, on a laptop that you use in multiple networks.
+- An internal switch does not expose the machine to the surrounding network but does not permit access outside either by default. You can use internet connection sharing to facilitate outbound network connections [example](https://www.packet6.com/allowing-windows-8-1-hyper-v-vm-to-work-with-wifi/). (Note that if you already have an external virtual switch using the same physical interface, then it seems that you need to share the existing external virtual network interface instead of the physical one.) This way the VM is only accessible from the local machine but is not disturbed by changes in the network, which is likely, for example, on a laptop that you use in multiple networks.
 
 Then run `docker-machine create --driver hyperv --hyperv-virtual-switch <Virtual Switch Name> <vm-name>` as administrator.
 
