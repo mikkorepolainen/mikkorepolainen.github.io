@@ -104,7 +104,7 @@ Run `docker-machine create --driver hyperv --hyperv-virtual-switch <Virtual Swit
 > The driver name has changed from `Hyper-V` to `hyperv`
 {: .note }
 
-TODO how to fix
+You may see the following error but it does not seem to matter:
 
 > This machine has been allocated an IP address, but Docker Machine could not
 reach it successfully.
@@ -147,9 +147,40 @@ To find out the bridged ip address of the VM, use `docker-machine ssh <vm-name> 
 
 Use this driver to control hosts with no direct support in docker-machine (or import existing hosts, see [Importing an Existing Machine](#Importing an Existing Machine)).
 
-TODO example for creating
+You must be able to SSH into an existing server with SSH key (instead of password).
+To enable logging in with a certificate on ubuntu, perform the following steps:
 
-For more options, refer to the [documentation](https://docs.docker.com/machine/drivers/generic/).
+1. On the local machine, create keys using `ssh-keygen`. Here we enter `<server-key-name>` as the name for the key (the name of the file in which to save the key, default is id_rsa).
+2. To send the key over to the VM, execute `ssh-copy-id -i <server-key-name> <user>@<server>` (the contents of the key will be inserted into `~/.ssh/authorized_keys`. You can do this manually if the ssh-copy-id command is not available).
+3. To log in with the certificate credentials, execute `ssh -i <server-key-name> <user>@<server>` (the -i option is not required if using the default key name).
+
+To use the same key on another client machine just copy the private certificate file (extensionless, not the .pub one) on the other computer and refer to that file using the -i switch (or use default location for key files and the key name `id_rsa`).
+
+Check out the following forum posts and docs:
+
+- [Setting up SSH Auth keys](http://askubuntu.com/questions/61557/how-do-i-set-up-ssh-authentication-keys)
+- [Copying SSH Keys to another machine](http://askubuntu.com/questions/4830/easiest-way-to-copy-ssh-keys-to-another-machine/4833#4833)
+- [Debian: Passwordless SSH](https://www.debian.org/devel/passwordlessssh)
+- [SSH Man pages](http://man.openbsd.org/ssh)
+
+You must also enable passwordless sudoing for the user.
+On ubuntu, one way of accomplishing this is to do the following on the remote host:
+
+Run `visudo` as root and add the `NOPASSWD:` bit on the following line
+
+```
+%sudo   ALL=(ALL:ALL) NOPASSWD:ALL
+```
+
+https://help.ubuntu.com/community/Sudoers
+http://askubuntu.com/questions/159007/how-do-i-run-specific-sudo-commands-without-a-password
+
+Then, on local host, run `docker-machine create --driver generic --generic-ip-address <server-ip> --generic-ssh-user <user> --generic-ssh-key ~/.ssh/<server-key-name> <docker-host-name>` where `<docker-host-name>` is the new name of the machine (the server will be referred to with this name in docker-machine and the host name in `/etc/hostname` on the remote host *is also changed* to reflect this).
+
+> If you run this multiple times against the same machine with a different `<docker-host-name>` parameter, you will get multiple entries in docker-machine's registry pointing in the same host with different names, but only the last name will appear in `/etc/hostname`.
+{: .note }
+
+For more information, refer to the [documentation](https://docs.docker.com/machine/drivers/generic/).
 
 #### Creating a remote VM on Azure
 
@@ -202,7 +233,7 @@ However, this can be accomplished manually by copying files from the `~/.docker/
 
 Copy the entire machine directory e.g. `~/.docker/machine/machines/<machine-name>` to the machines directory on another computer. Change paths in the config.json to reflect the new computer if necessary.
 
-TODO Couldn't get this to work with an Azure VM
+TODO Couldn't get this to work with azure or generic ubuntu.
 
 > Error checking TLS connection: Error checking and/or regenerating the certs: There was an error validating certificates for host "aa.bb.cc.dd:2376": x509: certificate signed by unknown authority (possibly because of "crypto/rsa: verification error" while trying to verify candidate authority certificate "serial:xxxxxxxxxxxxxxxxx") You can attempt to regenerate them using 'docker-machine regenerate-certs [name]'.
 > Be advised that this will trigger a Docker daemon restart which will stop running containers.
@@ -210,9 +241,11 @@ TODO Couldn't get this to work with an Azure VM
 
 TODO this didn't help either : copy the certs directory from `~/.docker/machine/certs` to `~/.docker/machine/machines/<machine-name>/certs` on the other computer. Change all cert paths in config.json to point to the copied certs.
 
-You can also use the generic driver with an existing host, but apparently the host certificates will get regenerated thereby invalidating access from the original computer.
+Problem has to do with the original certificate being granted to a specific IP address?
 
-Apparently there used to be a "none" driver available that could be used for this purpose but it seems to have been removed. However, using the none driver still involved manually copying certs around.
+You can also use the generic driver with an existing host, but the host certificates will get regenerated thereby invalidating access from the original computer. In addition, the docker engine will be restarted and any running containers will be stopped. TODO and restarted if configured with the `--restart` option?
+
+TODO Apparently there used to be a "none" driver available that could be used for this purpose but it seems to have been removed. However, using the none driver still involved manually copying certs around.
 
 TODO follow these:
 
