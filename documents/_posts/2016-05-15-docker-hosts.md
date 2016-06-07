@@ -94,7 +94,7 @@ It may be safer to create an external virtual switch in addition to the internal
 
 {% include figure.html id="hyperv-external-virtual-switch" url="images/hyperv-external-virtual-switch.png" caption="Creating an external virtual switch" description="Dialog for creating an external virtual switch" %}
 
-{% include figure.html id="win10-internet-connection-sharing" url="images/win10-internet-connection-sharing.png" caption="Creating an external virtual switch" description="Dialog for creating an external virtual switch" %}
+{% include figure.html id="win10-internet-connection-sharing" url="images/win10-internet-connection-sharing.png" caption="Enabling internet connection sharing" description="Dialog for enabling internet connection sharing" %}
 
 The internal virtual switch will be routed automatically through the external switch.
 No additional steps are required, but if you have other VMs on your computer you may need to restart them (or exit and start Docker for Windows again).
@@ -103,7 +103,7 @@ No additional steps are required, but if you have other VMs on your computer you
 
 Run `docker-machine create --driver hyperv --hyperv-virtual-switch <Virtual Switch Name> <vm-name>` as administrator.
 
-> Note that the driver name has changed from `Hyper-V` to `hyperv`
+> The driver name has changed from `Hyper-V` to `hyperv`
 {: .note }
 
 TODO how to fix
@@ -160,16 +160,16 @@ For more options, refer to the [documentation](https://docs.docker.com/machine/d
 
 ...where:
 
-- <Subscription ID> is your Azure Subscription ID. (Search for Subscriptions in the management portal, look under settings in classic portal.)
-- <Region> is the name of the azure region, e.g. "northeurope" (default is "westus"). See [available regions](https://azure.microsoft.com/en-us/regions/) TODO list of valid region codes or just need to guess based on region name?
-- <Size> is the pricing tier of the VM, e.g. Basic_A1 (default is Standard_A2). See [VM pricing](https://azure.microsoft.com/en-us/pricing/details/virtual-machines/)).
-- <VNet> is the name of the virtual network (default is "docker-machine-vnet").
-- <Subnet> is the name of the subnet in the virtual network (default is "docker-machine").
-- <Resource Group> is the name of the resource group (default is "docker-machine").
-- <vm-name> is 3-63 characters long and contains only lower-case alphanumeric characters and hyphens (a hyphen must be preceded and followed by an alphanumeric character). Otherwise creating the virtual hard disk image fails.
+- `<Subscription ID>` is your Azure Subscription ID. (Search for Subscriptions in the management portal, look under settings in classic portal.)
+- `<Region>` is the name of the azure region, e.g. "northeurope" (default is "westus"). See [available regions](https://azure.microsoft.com/en-us/regions/) TODO list of valid region codes or just need to guess based on region name?
+- `<Size>` is the pricing tier of the VM, e.g. Basic_A1 (default is Standard_A2). See [VM pricing](https://azure.microsoft.com/en-us/pricing/details/virtual-machines/)).
+- `<VNet>` is the name of the virtual network (default is "docker-machine-vnet").
+- `<Subnet>` is the name of the subnet in the virtual network (default is "docker-machine").
+- `<Resource Group>` is the name of the resource group (default is "docker-machine").
+- `<vm-name>` is 3-63 characters long and contains only lower-case alphanumeric characters and hyphens (a hyphen must be preceded and followed by an alphanumeric character). Otherwise creating the virtual hard disk image fails.
 You will need to authenticate by opening a url in a browser and entering an authentication code (both are presented by the tool on the command line).
 
-TODO creating a machine in a DevTest Lab. Using the lab VNet (Dtl<LabName>) and Resource Group (<LabName><Random code>) with or without specifying the existing Subnet (Dtl<LabName>Subnet) failed with error "Subnet 'xxx' is not valid in virtual network 'Dtl<LabName>'
+TODO creating a machine in a DevTest Lab. Using the lab VNet (`Dtl<LabName>`) and Resource Group (`<LabName><Random code>`) with or without specifying the existing Subnet (`Dtl<LabName>Subnet`) failed with error `Subnet 'xxx' is not valid in virtual network 'Dtl<LabName>'`
 
 TODO errors
 
