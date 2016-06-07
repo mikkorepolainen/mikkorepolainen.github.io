@@ -4,7 +4,9 @@ main *{
 main {
   margin-top: 1.25rem;
 }
-
+h6 {
+  font-weight: bold;
+}
 figure.highlight {
   background-color: #f8f8f8;
   border-color: #dfdfdf;
@@ -21,7 +23,7 @@ figure.highlight pre code{
   border-color: transparent;
   border-style: none;
   border-width: 0px;
-  padding: 0.0rem 0.0rem 0.0rem 0.0rem;  
+  padding: 0.0rem 0.0rem 0.0rem 0.0rem;
 }
 
 code, code *{
