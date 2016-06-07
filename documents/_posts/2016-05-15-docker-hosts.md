@@ -62,8 +62,6 @@ Examples
 
 `docker-machine create --driver virtualbox <vm-name>`
 
-TODO networking (bridged/nat)
-
 For more options, refer to the [documentation](https://docs.docker.com/machine/drivers/virtualbox/).
 
 #### Creating a local VM on Hyper-V
@@ -147,10 +145,9 @@ To find out the bridged ip address of the VM, use `docker-machine ssh <vm-name> 
 
 #### Generic
 
-Use this driver to control hosts with no direct support in docker-machine (or import existing hosts).
+Use this driver to control hosts with no direct support in docker-machine (or import existing hosts, see [Importing an Existing Machine](#Importing an Existing Machine)).
 
 TODO example for creating
-TODO example for importing (always regenerates certs and restarts? -> not an option for managing CLI environment)
 
 For more options, refer to the [documentation](https://docs.docker.com/machine/drivers/generic/).
 
@@ -190,16 +187,37 @@ TODO
 Removing a VM
 -------------
 
-`docker-machine rm -f <vm-name>`
+`docker-machine rm <vm-name>`
 
 This will also attempt to remove related resources such as virtual networking infrastructure that was created along with the virtual machine.
-The command works also if the creation of the VM failed for some reason but docker-machine still thinks that the machine exists.
+By adding the `-f` flag the command works also if the creation of the VM failed for some reason but docker-machine still thinks that the machine exists.
 
-Updating configuration, importing existing machine
+To remove the machine entry without removing the VM itself, you need to remove the machine directory manually from `~/.docker/machine/machines`.
+
+Importing an Existing Machine
 --------------------------------------------------
 
-TODO
+Currently there is no easy way to export/import docker-machine configurations in the docker-machine tooling itself.
+However, this can be accomplished manually by copying files from the `~/.docker/machine/` directory or by using 3rd party scripts (e.g. machine-share, see [npm](https://www.npmjs.com/package/machine-share) [github](https://github.com/bhurlow/machine-share) NOTE: Does not work on windows).
 
+Copy the entire machine directory e.g. `~/.docker/machine/machines/<machine-name>` to the machines directory on another computer. Change paths in the config.json to reflect the new computer if necessary.
+
+TODO Couldn't get this to work with an Azure VM
+
+> Error checking TLS connection: Error checking and/or regenerating the certs: There was an error validating certificates for host "aa.bb.cc.dd:2376": x509: certificate signed by unknown authority (possibly because of "crypto/rsa: verification error" while trying to verify candidate authority certificate "serial:xxxxxxxxxxxxxxxxx") You can attempt to regenerate them using 'docker-machine regenerate-certs [name]'.
+> Be advised that this will trigger a Docker daemon restart which will stop running containers.
+{: .terminal }
+
+TODO this didn't help either : copy the certs directory from `~/.docker/machine/certs` to `~/.docker/machine/machines/<machine-name>/certs` on the other computer. Change all cert paths in config.json to point to the copied certs.
+
+You can also use the generic driver with an existing host, but apparently the host certificates will get regenerated thereby invalidating access from the original computer.
+
+Apparently there used to be a "none" driver available that could be used for this purpose but it seems to have been removed. However, using the none driver still involved manually copying certs around.
+
+TODO follow these:
+
+https://github.com/docker/machine/issues/23
+https://github.com/docker/machine/pull/29
 https://github.com/docker/machine/issues/1328
 
 Interacting With the Docker Host
@@ -235,6 +253,8 @@ See more information in [docker-machine reference](https://docs.docker.com/machi
 
 Connecting to a Remote Docker Host with the CLI
 ===============================================
+
+Obtain the ip address of the remote host either by running `docker-machine env <vm-name>` on a computer where docker-machine is aware of the VM, or by ssh'ing on the host and getting the address (usually eth0) using `ifconfig`.
 
 TODO env vars from docker-machine env
 TODO how to get management cert?
