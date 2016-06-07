@@ -26,11 +26,11 @@ Resources:
 
 - [Official documentation](https://docs.docker.com/machine/)
 
-Docker Machine can be used to quickly provision virtual machines for use as docker hosts.
+Docker Machine can be used to quickly provision virtual machines for use as docker hosts or for controlling existing hosts (using the generic driver).
 There is a selection of drivers available for both local and remote virtualization hosts/providers.
 Check the [official documentation](https://docs.docker.com/machine/drivers/) for a list of available drivers and driver-specific documentation.
 
-TODO Suitability for production use?
+The tool also helps in configuring the command line tools to point to an imported docker host instance (`docker-machine env <vm-name>`) even if provisioning or management is not required.
 
 Installation
 ------------
@@ -68,22 +68,65 @@ For more options, refer to the [documentation](https://docs.docker.com/machine/d
 
 #### Creating a local VM on Hyper-V
 
-On modern computers running a recent version of windows, you can use the native Hyper-V platform instead of VirtualBox. This requires installing the HyperV virtualization windows features and enabling virtualization extensions in BIOS. Note that VirtualBox won't work while HyperV is enabled. TODO link to instructions.
+On modern computers running a recent version of windows, you can use the native Hyper-V platform instead of VirtualBox. This requires turning on the Hyper-V virtualization windows features and enabling Virtualization Extensions in BIOS (e.g. intel vt-x or amd-v). Google for enabling virtualization extensions / virtualization technology for your hardware. Note that VirtualBox won't work while Hyper-V is enabled. One set of instructions can be found [here](https://blogs.technet.microsoft.com/canitpro/2014/03/10/step-by-step-enabling-hyper-v-for-use-on-windows-8-1/).
 
-Full instructions can be found [here](https://stebet.net/installing-docker-tools-on-windows-using-hyper-v/) and [here](https://blogs.technet.microsoft.com/canitpro/2014/03/10/step-by-step-enabling-hyper-v-for-use-on-windows-8-1/). Remember to run all commands in a terminal launched as administrator, including listing containers (hyper-v controlled instances won't show unless running as administrator).
+##### Setting Up Hyper-V and Networking for Docker
+
+Follow instructions [here](https://stebet.net/installing-docker-tools-on-windows-using-hyper-v/) for setting up docker to use Hyper-V. You must run all docker-machine commands in a terminal launched as administrator, including listing machines (Hyper-V controlled instances cannot be controlled unless running as administrator).
 
 In a nutshell, you must create a virtual network switch in Hyper-V Manager (local machine -> Virtual Switch Manager... -> New virtual network switch). For the switch type, you can select either external (bridge the VM through a NIC on your computer) or internal (accessible only from host). TODO [NAT switch](https://4sysops.com/archives/native-nat-in-windows-10-hyper-v-using-a-nat-virtual-switch/).
 
-- To expose the VM to the surrounding network, select the External virtual switch type. In the switch configuration, select the appropriate External network (physical network adapter). The VM will be visible as <vm-name> in the surrounding network and gets an IP address from the network's dhcp service unless explicitly set. The VM is also vulnerable to changes in the network, e.g. if your computer is a laptop that you use in multiple networks. TODO does shutting down the machine help?
-- An internal switch does not expose the machine to the surrounding network but does not permit access outside either by default. You can use internet connection sharing to facilitate outbound network connections [example](https://www.packet6.com/allowing-windows-8-1-hyper-v-vm-to-work-with-wifi/). (Note that if you already have an external virtual switch using the same physical interface, then it seems that you need to share the existing external virtual network interface instead of the physical one.) This way the VM is only accessible from the local machine but is not disturbed by changes in the network, which is likely, for example, on a laptop that you use in multiple networks.
+###### External Switch
 
-Then run `docker-machine create --driver hyperv --hyperv-virtual-switch <Virtual Switch Name> <vm-name>` as administrator.
+To expose the VM to the surrounding network, select the External virtual switch type. In the switch configuration, select the appropriate External network (physical network adapter). The VM will be visible as <vm-name> in the surrounding network and gets an IP address from the network's dhcp service unless explicitly set. The VM is also vulnerable to changes in the network, e.g. if your computer is a laptop that you use in multiple networks. TODO does shutting down the machine help?
+
+###### Internal Switch
+
+An internal switch does not expose the machine to the surrounding network but does not permit access outside either by default. You can use internet connection sharing to facilitate outbound network connections [example](https://www.packet6.com/allowing-windows-8-1-hyper-v-vm-to-work-with-wifi/). (Note that if you already have an external virtual switch using the same physical interface, then it seems that you need to share the existing external virtual network interface instead of the physical one.) This way the VM is only accessible from the local machine but is not disturbed by changes in the network, which is likely, for example, on a laptop that you use in multiple networks.
+
+If you installed the Docker for Windows tool instead of Docker Toolbox, you should already have an internal virtual switch called DockerNAT. The default docker VM works out of the box, but connectivity for additional Hyper-V VMs still require setting up internet connection sharing.
+
+On Windows 10, enabling internet connection sharing for an adapter displays the following warning:
+
+{% include figure.html id="win10-internet-connection-sharing-warning" url="images/win10-internet-connection-sharing-warning.png" caption="Warning when enabling internet connection sharing" description="This warning is displayed when enabling internet connection sharing" %}
+
+It may be safer to create an external virtual switch in addition to the internal switch and share that instead.
+
+{% include figure.html id="hyperv-external-virtual-switch" url="images/hyperv-external-virtual-switch.png" caption="Creating an external virtual switch" description="Dialog for creating an external virtual switch" %}
+
+{% include figure.html id="win10-internet-connection-sharing" url="images/win10-internet-connection-sharing.png" caption="Creating an external virtual switch" description="Dialog for creating an external virtual switch" %}
+
+The internal virtual switch will be routed automatically through the external switch.
+No additional steps are required, but if you have other VMs on your computer you may need to restart them (or exit and start Docker for Windows again).
+
+##### Creating the VM
+
+Run `docker-machine create --driver hyperv --hyperv-virtual-switch <Virtual Switch Name> <vm-name>` as administrator.
+
+> Note that the driver name has changed from `Hyper-V` to `hyperv`
+{: .note }
+
+TODO how to fix
+
+> This machine has been allocated an IP address, but Docker Machine could not
+reach it successfully.
+>
+> SSH for the machine should still work, but connecting to exposed ports, such as the Docker daemon port (usually <ip>:2376), may not work properly.
+>
+> You may need to add the route manually, or use another related workaround.
+>
+> This could be due to a VPN, proxy, or host file configuration issue.
+>
+> You also might want to clear any VirtualBox host only interfaces you are not using.
+{: .terminal }
 
 Virtual Switch Name defaults to the first virtual switch found.
 
 For more options, refer to the [documentation](https://docs.docker.com/machine/drivers/hyper-v/).
 
-#### Creating a local VM on KVM
+#### Creating a VM on KVM (locally)
+
+Managing docker hosts on KVM works only locally at the moment since the driver used below does not yet have remote management capabilities.
 
 Using docker-machine with KVM requires a third party driver, e.g.: [docker-machine-kvm](https://github.com/dhiltgen/docker-machine-kvm).
 (For setting up a KVM environment, see [Virtualization With KVM]({% post_url 2015-10-07-virtualization-with-kvm %}).)
@@ -106,7 +149,8 @@ To find out the bridged ip address of the VM, use `docker-machine ssh <vm-name> 
 
 Use this driver to control hosts with no direct support in docker-machine (or import existing hosts).
 
-TODO example
+TODO example for creating
+TODO example for importing (always regenerates certs and restarts? -> not an option for managing CLI environment)
 
 For more options, refer to the [documentation](https://docs.docker.com/machine/drivers/generic/).
 
@@ -129,12 +173,13 @@ TODO creating a machine in a DevTest Lab. Using the lab VNet (Dtl<LabName>) and 
 
 TODO errors
 
-Error checking TLS connection: Error checking and/or regenerating the certs: There was an error validating certificates for host "xxx:2376": tls: DialWithDialer timed out
-You can attempt to regenerate them using 'docker-machine regenerate-certs [name]'.
-Be advised that this will trigger a Docker daemon restart which will stop running containers.
-
-Stored Azure credentials expired. Please reauthenticate.
-Error checking TLS connection: Error creating Azure client: Error deleting stale token file: remove ...\xxx.json: The process cannot access the file because it is being used by another process.
+> Error checking TLS connection: Error checking and/or regenerating the certs: There was an error validating certificates for host "xxx:2376": tls: DialWithDialer timed out
+> You can attempt to regenerate them using 'docker-machine regenerate-certs [name]'.
+> Be advised that this will trigger a Docker daemon restart which will stop running containers.
+>
+> Stored Azure credentials expired. Please reauthenticate.
+> Error checking TLS connection: Error creating Azure client: Error deleting stale token file: remove ...\xxx.json: The process cannot access the file because it is being used by another process.
+{: .terminal}
 
 For more options, refer to the [documentation](https://docs.docker.com/machine/drivers/azure/).
 
@@ -185,3 +230,9 @@ Commands
 - `docker-machine rm <vm-name>` remove
 
 See more information in [docker-machine reference](https://docs.docker.com/machine/reference/).
+
+Connecting to a Remote Docker Host with the CLI
+===============================================
+
+TODO env vars from docker-machine env
+TODO how to get management cert?
