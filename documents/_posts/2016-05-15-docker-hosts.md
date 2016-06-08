@@ -17,7 +17,9 @@ published: true
 hidden: true
 ---
 
-TODO Docker Machine, Swarm, OpenStack
+TODO Docker Machine, Swarm
+TODO CoreOS, OpenStack
+TODO https://www.kontena.io/
 
 Docker Machine
 ==============
@@ -72,7 +74,7 @@ On modern computers running a recent version of windows, you can use the native 
 
 Follow instructions [here](https://stebet.net/installing-docker-tools-on-windows-using-hyper-v/) for setting up docker to use Hyper-V. You must run all docker-machine commands in a terminal launched as administrator, including listing machines (Hyper-V controlled instances cannot be controlled unless running as administrator).
 
-In a nutshell, you must create a virtual network switch in Hyper-V Manager (local machine -> Virtual Switch Manager... -> New virtual network switch). For the switch type, you can select either external (bridge the VM through a NIC on your computer) or internal (accessible only from host). TODO [NAT switch](https://4sysops.com/archives/native-nat-in-windows-10-hyper-v-using-a-nat-virtual-switch/).
+In a nutshell, you must create a virtual network switch in Hyper-V Manager (local machine -> Virtual Switch Manager... -> New virtual network switch). For the switch type, you can select either external (bridge the VM through a NIC on your computer) or internal (accessible only from host). TODO [NAT switch](https://4sysops.com/archives/native-nat-in-windows-10-hyper-v-using-a-nat-virtual-switch/)?
 
 ###### External Switch
 
@@ -145,7 +147,7 @@ To find out the bridged ip address of the VM, use `docker-machine ssh <vm-name> 
 
 #### Generic
 
-Use this driver to control hosts with no direct support in docker-machine (or import existing hosts, see [Importing an Existing Machine](#Importing an Existing Machine)).
+Use this driver to set up docker engine on existing hosts.
 
 You must be able to SSH into an existing server with SSH key (instead of password).
 To enable logging in with a certificate on ubuntu, perform the following steps:
@@ -172,6 +174,10 @@ Run `visudo` as root and add the `NOPASSWD:` bit on the following line
 %sudo   ALL=(ALL:ALL) NOPASSWD:ALL
 ```
 
+TODO or `<user> ALL=(ALL) NOPASSWD:ALL` (https://github.com/docker/machine/issues/1569)
+TODO or `%sudo   ALL=(ALL) NOPASSWD:ALL` or not required anymore? (https://blog.dahanne.net/2015/10/07/adding-an-existing-docker-host-to-docker-machine-a-few-tips/)
+
+
 https://help.ubuntu.com/community/Sudoers
 http://askubuntu.com/questions/159007/how-do-i-run-specific-sudo-commands-without-a-password
 
@@ -193,7 +199,7 @@ For more information, refer to the [documentation](https://docs.docker.com/machi
 - `<Size>` is the pricing tier of the VM, e.g. Basic_A1 (default is Standard_A2). See [VM pricing](https://azure.microsoft.com/en-us/pricing/details/virtual-machines/)).
 - `<VNet>` is the name of the virtual network (default is "docker-machine-vnet").
 - `<Subnet>` is the name of the subnet in the virtual network (default is "docker-machine").
-- `<Resource Group>` is the name of the resource group (default is "docker-machine").
+- `<Resource Group>` is the name of~~~~~ the resource group (default is "docker-machine").
 - `<vm-name>` is 3-63 characters long and contains only lower-case alphanumeric characters and hyphens (a hyphen must be preceded and followed by an alphanumeric character). Otherwise creating the virtual hard disk image fails.
 You will need to authenticate by opening a url in a browser and entering an authentication code (both are presented by the tool on the command line).
 
@@ -229,21 +235,75 @@ Importing an Existing Machine
 --------------------------------------------------
 
 Currently there is no easy way to export/import docker-machine configurations in the docker-machine tooling itself.
-However, this can be accomplished manually by copying files from the `~/.docker/machine/` directory or by using 3rd party scripts (e.g. machine-share, see [npm](https://www.npmjs.com/package/machine-share) [github](https://github.com/bhurlow/machine-share) NOTE: Does not work on windows).
+However, this can be accomplished manually by copying files from the `~/.docker/machine/` directory or by using 3rd party scripts.
 
-Copy the entire machine directory e.g. `~/.docker/machine/machines/<machine-name>` to the machines directory on another computer. Change paths in the config.json to reflect the new computer if necessary.
+### Scripts
 
-TODO Couldn't get this to work with azure or generic ubuntu.
+TODO machine-share, see [npm](https://www.npmjs.com/package/machine-share) [github](https://github.com/bhurlow/machine-share) NOTE: Does not work on windows.
 
-> Error checking TLS connection: Error checking and/or regenerating the certs: There was an error validating certificates for host "aa.bb.cc.dd:2376": x509: certificate signed by unknown authority (possibly because of "crypto/rsa: verification error" while trying to verify candidate authority certificate "serial:xxxxxxxxxxxxxxxxx") You can attempt to regenerate them using 'docker-machine regenerate-certs [name]'.
-> Be advised that this will trigger a Docker daemon restart which will stop running containers.
-{: .terminal }
+### Manually
 
-TODO this didn't help either : copy the certs directory from `~/.docker/machine/certs` to `~/.docker/machine/machines/<machine-name>/certs` on the other computer. Change all cert paths in config.json to point to the copied certs.
+Copy the entire machine directory e.g. `~/.docker/machine/machines/<machine-name>` to the machines directory on another computer. Change paths in the config.json file to reflect the new computer if necessary.
 
-Problem has to do with the original certificate being granted to a specific IP address?
+Additionally, change the AuthOptions section in config.json to point to keys under the `<machine-name>` directory instead of the `certs` directory. For example on windows:
 
-You can also use the generic driver with an existing host, but the host certificates will get regenerated thereby invalidating access from the original computer. In addition, the docker engine will be restarted and any running containers will be stopped. TODO and restarted if configured with the `--restart` option?
+Before:
+
+{% highlight json %}
+{
+  ...
+  "HostOptions": {
+    ...
+    "AuthOptions": {
+      "CertDir": "C:\\Users\\<user>\\.docker\\machine\\certs", <--
+      "CaCertPath": "C:\\Users\\<user>\\.docker\\machine\\certs\\ca.pem", <--
+      "CaPrivateKeyPath": "C:\\Users\\<user>\\.docker\\machine\\certs\\ca-key.pem", <-- this key is not present in the machine directory but is not needed either
+      "CaCertRemotePath": "",
+      "ServerCertPath": "C:\\Users\\<user>\\.docker\\machine\\machines\\<machine-name>\\server.pem",
+      "ServerKeyPath": "C:\\Users\\<user>\\.docker\\machine\\machines\\<machine-name>\\server-key.pem",
+      "ClientKeyPath": "C:\\Users\\<user>\\.docker\\machine\\certs\\key.pem", <--
+      "ServerCertRemotePath": "",
+      "ServerKeyRemotePath": "",
+      "ClientCertPath": "C:\\Users\\<user>\\.docker\\machine\\certs\\cert.pem", <--
+      "ServerCertSANs": [],
+      "StorePath": "C:\\Users\\<user>\\.docker\\machine\\machines\\<machine-name>"
+    }
+    ...
+  }
+  ...
+}
+{% endhighlight %}
+
+After:
+
+{% highlight json %}
+{
+  ...
+  "HostOptions": {
+    ...
+    "AuthOptions": {
+      "CertDir": "C:\\Users\\<user>\\.docker\\machine\\machines\\<machine-name>", <--
+      "CaCertPath": "C:\\Users\\<user>\\.docker\\machine\\machines\\<machine-name>\\ca.pem", <--
+      "CaPrivateKeyPath": "C:\\Users\\<user>\\.docker\\machine\\machines\\<machine-name>\\ca-key.pem", <--
+      "CaCertRemotePath": "",
+      "ServerCertPath": "C:\\Users\\<user>\\.docker\\machine\\machines\\<machine-name>\\server.pem",
+      "ServerKeyPath": "C:\\Users\\<user>\\.docker\\machine\\machines\\<machine-name>\\server-key.pem",
+      "ClientKeyPath": "C:\\Users\\<user>\\.docker\\machine\\machines\\<machine-name>\\key.pem", <--
+      "ServerCertRemotePath": "",
+      "ServerKeyRemotePath": "",
+      "ClientCertPath": "C:\\Users\\<user>\\.docker\\machine\\machines\\<machine-name>\\cert.pem", <--
+      "ServerCertSANs": [],
+      "StorePath": "C:\\Users\\<user>\\.docker\\machine\\machines\\<machine-name>"
+    }
+    ...
+  }
+  ...
+}
+{% endhighlight %}
+
+### Other Methods
+
+You could also use the create command with the generic driver to configure an existing host, but the host certificates will get regenerated thereby invalidating access from the original computer. In addition, the docker engine will be restarted and any running containers will be stopped. TODO and restarted if configured with the `--restart` option?
 
 TODO Apparently there used to be a "none" driver available that could be used for this purpose but it seems to have been removed. However, using the none driver still involved manually copying certs around.
 
@@ -260,12 +320,16 @@ Run `docker-machine ls` to view a list of machines managed by the current host.
 
 To find out the ip address of the VM, use `docker-machine ip <vm-name>`.
 
-NOTE: The host name of the VM seems to be `boot2docker` when first created, bridged to a network that uses DHCP for DNS.
-Rebooting the VM seems to rectify the issue.
+NOTE: The host name of a VM on virtualbox seems to be `boot2docker` when first created, bridged to a network that uses DHCP for DNS.
+Rebooting the VM seemed to rectify the issue.
 
-On linux you need to do `eval $(docker-machine env <vm-name>)` to set up the command line environment to point to the correct instance for subsequent docker commands.
+Run `docker-machine env <vm-name>` to get instructions (and copy-pasteable single-line command for your system) for setting up the command line environment to point to the correct instance for subsequent docker commands.
 
-On windows the corresponding command is `@FOR /f "tokens=*" %i IN ('docker-machine env <vm-name>') DO @%i` or `& "C:\Program Files\Docker Toolbox\docker-machine.exe" env <vm-name> | Invoke-Expression` on powershell.
+The one-liners look like this:
+
+- On linux: `eval $(docker-machine env <vm-name>)`.
+- On windows cmd shell: `@FOR /f "tokens=*" %i IN ('docker-machine env <vm-name>') DO @%i`
+- On windows powershell: `& "C:\path\to\docker-machine.exe" env <vm-name> | Invoke-Expression`
 
 Run `docker info` or `docker version` to show information on the host and to verify connectivity. Use `docker-machine ssh <vm-name>` to ssh to the VM.
 
@@ -287,7 +351,19 @@ See more information in [docker-machine reference](https://docs.docker.com/machi
 Connecting to a Remote Docker Host with the CLI
 ===============================================
 
-Obtain the ip address of the remote host either by running `docker-machine env <vm-name>` on a computer where docker-machine is aware of the VM, or by ssh'ing on the host and getting the address (usually eth0) using `ifconfig`.
+- Obtain the url address of the remote host e.g. `tcp://aa.bb.cc.dd:2376` (default port 2376).
+- Obtain the TLS certificates for the host
 
-TODO env vars from docker-machine env
-TODO how to get management cert?
+If you have created the machine using `docker-machine`, you can get the url and a path to the certificates on the original computer by running `docker-machine env <vm-name>`).
+Copy the certificates from the machine path on the original computer to a directory on the new computer (or just copy the entire machine directory).
+See also [Importing an Existing Machine to Docker Machine](#Docker_Machine_Importing_an_Existing_Machine).
+
+TODO obtaining certs without docker-machine
+
+After running the following commands you should be able to run docker commands against the remote host:
+
+```
+SET DOCKER_TLS_VERIFY=1
+SET DOCKER_HOST=<host-url>
+SET DOCKER_CERT_PATH=<path-to-cert-directory>
+```
