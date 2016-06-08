@@ -152,9 +152,9 @@ Use this driver to set up docker engine on existing hosts.
 You must be able to SSH into an existing server with SSH key (instead of password).
 To enable logging in with a certificate on ubuntu, perform the following steps:
 
-1. On the local machine, create keys using `ssh-keygen`. Here we enter `<server-key-name>` as the name for the key (the name of the file in which to save the key, default is id_rsa).
-2. To send the key over to the VM, execute `ssh-copy-id -i <server-key-name> <user>@<server>` (the contents of the key will be inserted into `~/.ssh/authorized_keys`. You can do this manually if the ssh-copy-id command is not available).
-3. To log in with the certificate credentials, execute `ssh -i <server-key-name> <user>@<server>` (the -i option is not required if using the default key name).
+1. On the local machine, create keys using `ssh-keygen`. Here we enter `~/.ssh/<server-key-name>` as the file name and path for the key (default file name is id_rsa).
+2. To send the key over to the VM, execute `ssh-copy-id -i ~/.ssh/<server-key-name> <user>@<server>` (the contents of the key will be inserted into `~/.ssh/authorized_keys`. You can do this manually if the ssh-copy-id command is not available).
+3. To log in with the certificate credentials, execute `ssh -i ~/.ssh/<server-key-name> <user>@<server>` (the -i option is not required if using the default key name).
 
 To use the same key on another client machine just copy the private certificate file (extensionless, not the .pub one) on the other computer and refer to that file using the -i switch (or use default location for key files and the key name `id_rsa`).
 
@@ -174,12 +174,13 @@ Run `visudo` as root and add the `NOPASSWD:` bit on the following line
 %sudo   ALL=(ALL:ALL) NOPASSWD:ALL
 ```
 
-TODO or `<user> ALL=(ALL) NOPASSWD:ALL` (https://github.com/docker/machine/issues/1569)
-TODO or `%sudo   ALL=(ALL) NOPASSWD:ALL` or not required anymore? (https://blog.dahanne.net/2015/10/07/adding-an-existing-docker-host-to-docker-machine-a-few-tips/)
+If that does not work, try adding the line `<user> ALL=(ALL) NOPASSWD:ALL` instead with the correct ssh username as `<user>`.
 
+TODO might not be required anymore  
+https://blog.dahanne.net/2015/10/07/adding-an-existing-docker-host-to-docker-machine-a-few-tips/  
+https://github.com/docker/machine/issues/1569
 
-https://help.ubuntu.com/community/Sudoers
-http://askubuntu.com/questions/159007/how-do-i-run-specific-sudo-commands-without-a-password
+See [here](https://help.ubuntu.com/community/Sudoers) and [here](http://askubuntu.com/questions/159007/how-do-i-run-specific-sudo-commands-without-a-password) for more information.
 
 Then, on local host, run `docker-machine create --driver generic --generic-ip-address <server-ip> --generic-ssh-user <user> --generic-ssh-key ~/.ssh/<server-key-name> <docker-host-name>` where `<docker-host-name>` is the new name of the machine (the server will be referred to with this name in docker-machine and the host name in `/etc/hostname` on the remote host *is also changed* to reflect this).
 
@@ -239,7 +240,8 @@ However, this can be accomplished manually by copying files from the `~/.docker/
 
 ### Scripts
 
-TODO machine-share, see [npm](https://www.npmjs.com/package/machine-share) [github](https://github.com/bhurlow/machine-share) NOTE: Does not work on windows.
+TODO machine-share, see [npm](https://www.npmjs.com/package/machine-share) or [github](https://github.com/bhurlow/machine-share)  
+NOTE: Does not work on windows.
 
 ### Manually
 
@@ -309,8 +311,8 @@ TODO Apparently there used to be a "none" driver available that could be used fo
 
 TODO follow these:
 
-https://github.com/docker/machine/issues/23
-https://github.com/docker/machine/pull/29
+https://github.com/docker/machine/issues/23  
+https://github.com/docker/machine/pull/29  
 https://github.com/docker/machine/issues/1328
 
 Interacting With the Docker Host
