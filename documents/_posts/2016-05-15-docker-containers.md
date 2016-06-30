@@ -55,7 +55,8 @@ https://docs.docker.com/engine/reference/commandline/run/
 Running continuously
 --------------------
 
-Use the `--restart="<no, on-failure[:max-retry], always, unless-stopped>"` switch on create <sub>[reference](https://docs.docker.com/engine/reference/commandline/create/)</sub> or run <sub>[reference](https://docs.docker.com/engine/reference/commandline/run/)</sub>. TODO what about host reboot?
+Use the `--restart="<no, on-failure[:max-retry], always, unless-stopped>"` switch on create <sub>[reference](https://docs.docker.com/engine/reference/commandline/create/)</sub> or run <sub>[reference](https://docs.docker.com/engine/reference/run/#restart-policies-restart)</sub>.
+For example, setting the flag value to `unless-stopped` will cause containers to be restarted on host reboot unless they have previously entered the stopped state.
 
 Short-Term Interactive Containers
 ---------------------------------
@@ -152,6 +153,7 @@ Stopping a Container
 
 - `docker stop -t <timeout-seconds> <container-name>` Terminate container with SIGTERM and SIGKILL after timeout-seconds (default: 10 seconds) <sub>[reference](https://docs.docker.com/engine/reference/commandline/kill/)</sub>.
 - `docker kill <container-name>` Terminate container with SIGKILL <sub>[reference](https://docs.docker.com/engine/reference/commandline/kill/)</sub>.
+- `docker kill docker kill -s=<signal> <container-name>` Terminate the container by sending the specified signal to the process running in the container e.g. SIGQUIT for nginx <sub>[reference](https://docs.docker.com/engine/reference/commandline/kill/)</sub>.
 - `docker rm <container-name>` Remove a containerL <sub>[reference](https://docs.docker.com/engine/reference/commandline/rm/)</sub>.
 
 Accessing a Container's Terminal
