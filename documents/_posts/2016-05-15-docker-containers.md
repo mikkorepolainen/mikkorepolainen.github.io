@@ -14,6 +14,10 @@ published: true
 hidden: true
 ---
 
+Notes about managing and interacting with containers manually.
+The information here is relevant only to development, testing, debugging (and perhaps really small production deployments).
+Production workloads should be managed with the tools provided by the deployment platform and application architecture.
+
 TODO restructure: theory first, then specifics of manual management?
 
 Creating & Running Containers
@@ -116,6 +120,10 @@ Use `docker volume ls` to list existing volume mappings
 
 Use `docker volume rm <volume-name>` to remove volume
 
+### Limiting volume Size
+
+TODO https://github.com/docker/docker/issues/16670
+
 Node
 =====
 
@@ -130,9 +138,43 @@ Managing and Monitoring Containers
 Monitoring a Container
 --------------------
 
-- `docker inspect <container-name>` Show container information <sub><sub>[reference](https://docs.docker.com/engine/reference/commandline/inspect/)</sub></sub>.
-- `docker logs --tail=<no-of-lines> <vm-name>` show console output. Add `--follow` flag to keep following the log (use Ctrl-C to exit) <sub>[reference](https://docs.docker.com/engine/reference/commandline/logs/)</sub>.
+- `docker inspect <container-name>` Show container information <sub>[reference](https://docs.docker.com/engine/reference/commandline/inspect/)</sub>.
 - `docker stats <container-name> [<container-name> ...]` view runtime metrics for containers (CPU, Memory, Network) <sub>[reference](https://docs.docker.com/engine/reference/commandline/stats/)</sub>.
+
+Logging from Containers
+---------------------
+
+STDOUT and STDERR emitted from the application running in the container are logged.
+The json-file logging driver is used by default. This driver does not rotate logs by default and can therefore eventually fill the host filesystem (TODO right?).
+The disk space used for logging via the json-file driver can be altered by using the `--log-opt` arguments. TODO https://docs.docker.com/engine/admin/logging/overview/
+
+TODO container max disk space usage, check df etc.
+
+Alternative log drivers can be used by specifying the `--log-driver <driver>` argument when starting the docker daemon manually <sub>[reference](https://docs.docker.com/engine/admin/logging/overview/)</sub>.
+
+- none	Disables any logging for the container. docker logs won’t be available with this driver.
+- json-file	Default logging driver for Docker. Writes JSON messages to file.
+- syslog	Syslog logging driver for Docker. Writes log messages to syslog.
+- journald	Journald logging driver for Docker. Writes log messages to journald.
+- gelf	Graylog Extended Log Format (GELF) logging driver for Docker. Writes log messages to a GELF endpoint like Graylog or Logstash.
+- fluentd	Fluentd logging driver for Docker. Writes log messages to fluentd (forward input).
+- awslogs	Amazon CloudWatch Logs logging driver for Docker. Writes log messages to Amazon CloudWatch Logs.
+- splunk	Splunk logging driver for Docker. Writes log messages to splunk using HTTP Event Collector.
+- etwlogs	ETW logging driver for Docker on Windows. Writes log messages as ETW events.
+- gcplogs	Google Cloud Logging driver for Docker. Writes log messages to Google Cloud Logging.
+
+TODO using alternative logging drivers with orchestration tools, engine and container specific cmd line args? 
+
+When using the json-file or the journald driver, the logs can be retrieved from an existing container using `docker logs <vm-name>` <sub>[reference](https://docs.docker.com/engine/reference/commandline/logs/)</sub>. This can be useful during development and testing.
+TODO where are json-file and journald logs stored?
+
+Useful arguments:
+
+- Add `--tail=<no-of-lines>` to limit to a number of last entries.
+- Add `--follow` (`-f`) flag to keep following the log (use Ctrl-C to exit).
+- Add `--timestamps` (`-t`) to include timestamps as well.
+
+NOTE The logs can also be retrieved using the remote API (TODO link to external instructions). TODO is this actually relevant?
 
 Stopping a Container
 -----------------------

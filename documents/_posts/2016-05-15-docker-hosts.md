@@ -72,7 +72,7 @@ On modern computers running a recent version of windows, you can use the native 
 
 ##### Setting Up Hyper-V and Networking for Docker
 
-Follow instructions [here](https://stebet.net/installing-docker-tools-on-windows-using-hyper-v/) for setting up docker to use Hyper-V. You must run all docker-machine commands in a terminal launched as administrator, including listing machines (Hyper-V controlled instances cannot be controlled unless running as administrator).
+Follow instructions [here](https://stebet.net/installing-docker-tools-on-windows-using-hyper-v/) or [here](https://chipsncookies.com/2015/run-docker-on-hyper-v-with-docker-machine/) for setting up docker to use Hyper-V. You must run all docker-machine commands in a terminal launched as administrator, including listing machines (Hyper-V controlled instances cannot be controlled unless running as administrator).
 
 In a nutshell, you must create a virtual network switch in Hyper-V Manager (local machine -> Virtual Switch Manager... -> New virtual network switch). For the switch type, you can select either external (bridge the VM through a NIC on your computer) or internal (accessible only from host). TODO [NAT switch](https://4sysops.com/archives/native-nat-in-windows-10-hyper-v-using-a-nat-virtual-switch/)?
 
