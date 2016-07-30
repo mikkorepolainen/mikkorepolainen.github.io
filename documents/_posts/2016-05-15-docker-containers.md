@@ -16,7 +16,7 @@ hidden: true
 
 Notes about managing and interacting with containers manually.
 The information here is relevant only to development, testing, debugging (and perhaps really small production deployments).
-Production workloads should be managed with the tools provided by the deployment platform and application architecture.
+Production workloads should be managed with the tools provided by the deployment platform in conjunction with logging/monitoring components used in the application architecture.
 
 TODO restructure: theory first, then specifics of manual management?
 
@@ -144,13 +144,15 @@ Monitoring a Container
 Logging from Containers
 ---------------------
 
-STDOUT and STDERR emitted from the application running in the container are logged.
+### Logging options
+
+STDIN, STDOUT and STDERR from the container are logged.
 The json-file logging driver is used by default. This driver does not rotate logs by default and can therefore eventually fill the host filesystem (TODO right?).
-The disk space used for logging via the json-file driver can be altered by using the `--log-opt` arguments. TODO https://docs.docker.com/engine/admin/logging/overview/
+The disk space used for logging via the json-file driver can be altered by using the `--log-opt` arguments. TODO https://github.com/docker/docker/pull/11485, https://github.com/docker/docker/issues/8911 and https://docs.docker.com/engine/admin/logging/overview/
 
-TODO container max disk space usage, check df etc.
+TODO is there a limit that a container root file system can use? Running df seems to always return the same value for free disk space as the host.
 
-Alternative log drivers can be used by specifying the `--log-driver <driver>` argument when starting the docker daemon manually <sub>[reference](https://docs.docker.com/engine/admin/logging/overview/)</sub>.
+Alternative log drivers can be used by specifying the `--log-driver <driver>` argument (and optionally driver-specific `--log-opt` arguments) when starting the docker daemon manually with the `docker daemon` command. The daemon-level log driver can be overridden by specifying the same arguments to `docker run` or `docker create`. <sub>[reference](https://docs.docker.com/engine/admin/logging/overview/)</sub>.
 
 - none	Disables any logging for the container. docker logs won’t be available with this driver.
 - json-file	Default logging driver for Docker. Writes JSON messages to file.
@@ -163,7 +165,11 @@ Alternative log drivers can be used by specifying the `--log-driver <driver>` ar
 - etwlogs	ETW logging driver for Docker on Windows. Writes log messages as ETW events.
 - gcplogs	Google Cloud Logging driver for Docker. Writes log messages to Google Cloud Logging.
 
-TODO using alternative logging drivers with orchestration tools, engine and container specific cmd line args? 
+TODO check at least journald https://docs.docker.com/engine/admin/logging/journald/ and syslog drivers
+
+TODO using alternative logging drivers with orchestration tools.
+
+### Reading log entries
 
 When using the json-file or the journald driver, the logs can be retrieved from an existing container using `docker logs <vm-name>` <sub>[reference](https://docs.docker.com/engine/reference/commandline/logs/)</sub>. This can be useful during development and testing.
 TODO where are json-file and journald logs stored?
@@ -175,6 +181,8 @@ Useful arguments:
 - Add `--timestamps` (`-t`) to include timestamps as well.
 
 NOTE The logs can also be retrieved using the remote API (TODO link to external instructions). TODO is this actually relevant?
+
+TODO Otherwise, refer to the platform or logging driver -specific documentation on how to retrieve the generated log entries.
 
 Stopping a Container
 -----------------------
