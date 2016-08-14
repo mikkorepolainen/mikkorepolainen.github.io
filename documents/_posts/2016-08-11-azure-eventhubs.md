@@ -25,10 +25,18 @@ Links
 - https://social.msdn.microsoft.com/Forums/windowsserver/en-US/0934435e-c578-4d20-b9d9-30a572706007/eventhub-how-to-set-up-the-offset-when-using-eventprocessorhost-?forum=servbus
 - https://blogs.msdn.microsoft.com/opensourcemsft/2015/08/08/choosing-between-azure-event-hub-and-kafka-what-you-need-to-know/
 
+Best Practices
+===========
+
+- TODO best practice for reliable processing: use a persistent queue in between?
 
 Checkpoints
-===========
+-----------
 
 - https://social.msdn.microsoft.com/Forums/windowsserver/en-US/0934435e-c578-4d20-b9d9-30a572706007/eventhub-how-to-set-up-the-offset-when-using-eventprocessorhost-?forum=servbus
   - Possible but works only on first request to partition ("blob lease obtained") -> must remove CG and related blob data and start over to reset.
-- TODO when using webjobs, when should checkpoint?
+
+Using with webjobs
+------------------
+
+- TODO best practices when using with webjobs, e.g. when should checkpoint

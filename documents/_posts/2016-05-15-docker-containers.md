@@ -2,7 +2,7 @@
 layout: document
 title: Docker Containers
 description: Notes about docker container management with docker tools.
-modified: 2016-05-15 23:59:00
+modified: 2016-08-14 23:59:00
 relativeroot: ../../
 permalink: documents/docker-containers
 type: document
@@ -15,10 +15,21 @@ hidden: true
 ---
 
 Notes about managing and interacting with containers manually.
-The information here is relevant only to development, testing, debugging (and perhaps really small production deployments).
-Production workloads should be managed with the tools provided by the deployment platform in conjunction with logging/monitoring components used in the application architecture.
+Note that production workloads should be managed with the tools provided by the deployment platform in conjunction with logging/monitoring components used in the application/deployment architecture.
 
-TODO restructure: theory first, then specifics of manual management?
+Docker Engine configuration
+===========================
+
+TODO Engine configuration:`/etc/default/docker`
+
+TODO is there a limit that a container root file system can use? Running df seems to always return the same value for free disk space as the host. Gather generic info like this in one place.
+
+Container Lifecycle
+===================
+
+TODO diagram https://docs.docker.com/engine/reference/api/docker_remote_api/#/docker-events
+TODO http://gliderlabs.com/blog/2015/04/14/docker-events-explained/
+TODO `docker events` and the Remote API
 
 Creating & Running Containers
 =============================
@@ -31,7 +42,7 @@ https://docs.docker.com/engine/reference/commandline/run/
 - `docker create --name <container-name> <image-name>` Create a container <sub>[reference](https://docs.docker.com/engine/reference/commandline/create/)</sub>.
 - `docker start ... <container-name>` Start a created container <sub>[reference](https://docs.docker.com/engine/reference/commandline/start/)</sub>.
 - `docker run -d --name <container-name> ... <image-name>` Shorthand for create + start <sub>[reference](https://docs.docker.com/engine/reference/commandline/run/)</sub>. Without `-d` connects to container and shows console output. Ctrl-C disconnects terminal but leaves container running.
-- `docker ps --all` Show existing containers <sub>[reference](https://docs.docker.com/engine/reference/commandline/ps/)</sub>.
+- `docker ps --all` Show (all) existing containers <sub>[reference](https://docs.docker.com/engine/reference/commandline/ps/)</sub>.
 
 Running continuously
 --------------------
@@ -75,7 +86,9 @@ Add `-e ENV_VAR=env_var_value` to add or override an environment variable. <sub>
 Exposing ports
 --------------
 
-TODO
+TODO EXPOSE exposes a port to the docker network and will be accessible by other containers.
+
+Publishing an exposed port makes the port accessible from the host's network.
 
 -P, --publish-all             Publish all exposed ports to random ports
 -p, --publish=[]              Publish a container's port(s) to the host
@@ -89,9 +102,10 @@ TODO https://docs.docker.com/engine/userguide/networking/
 Volumes
 -------
 
-Mount a directory (or file? TODO how does this work) either in the image (dockerfile)
-or when creating the container (create/run).
+Mount a directory or file either in the image (dockerfile) or when creating the container (create/run).
 Changes in the host are reflected immediately in the container.
+
+Official tutorial [here](https://docs.docker.com/engine/tutorials/dockervolumes/).
 
 ### Dockerfile
 
@@ -109,16 +123,20 @@ The specified volume definition will be overridden if using the same `<path in c
 
 - `-v <path in container>`: host volume name is generated, contents from image are copied over.
 - `-v <name>:<path in container>` where name does not start with a forward slash: host volume name is `<name>` under volumes directory. If the named volume exists already, the contents will not be affected by image contents even when container is removed and re-created. Otherwise, the contents are copied over from the image.
-- `-v <path on host>:<path in container>`: host volume in specified (absolute) path. Image contents are not copied on host at all (host directory completely overrides the directory in the container).
+- `-v <path on host>:<path in container>`: host volume in specified (absolute) path. Image contents are not copied on host at all (host directory completely overrides the directory or file in the container).
 
 ### Existing volumes
 
-Stopping and removing the container does not remove the associated volumes (unless the [--rm](https://docs.docker.com/engine/reference/run/#clean-up-rm) switch was used when creating the container).
-Removing the volume directory on the host is not sufficient either (it will still be mapped on the host). To remove a volume (or allow a named volume to be re-populated from the image when re-creating a container), use the `docker volume rm` command.
+Stopping and removing the container does not remove the associated volumes by default (unless the [--rm](https://docs.docker.com/engine/reference/run/#clean-up-rm) switch was used when creating the container).
+The `rm` command can be used with the `-v` flag which causes volumes to be deleted as well.
+Named volumes are not deleted in either case.
 
-Use `docker volume ls` to list existing volume mappings
+Removing the volume directory on the host is not sufficient for manual deletion (it will still be mapped on the host, causing problems with the engine).
+To remove a volume (or allow a named volume to be re-populated from the image when re-creating a container), use the `docker volume rm` command.
 
-Use `docker volume rm <volume-name>` to remove volume
+Use `docker volume ls` to list existing volume mappings.
+
+Use `docker volume rm <volume-name>` to remove a named volume.
 
 ### Limiting volume Size
 
@@ -144,35 +162,16 @@ Monitoring a Container
 Logging from Containers
 ---------------------
 
-### Logging options
+Docker logs STDIN, STDOUT and STDERR from the container automatically.
+The default logging driver is json-file.
+NOTE This driver will eventually fill the host filesystem with the default options!
 
-STDIN, STDOUT and STDERR from the container are logged.
-The json-file logging driver is used by default. This driver does not rotate logs by default and can therefore eventually fill the host filesystem (TODO right?).
-The disk space used for logging via the json-file driver can be altered by using the `--log-opt` arguments. TODO https://github.com/docker/docker/pull/11485, https://github.com/docker/docker/issues/8911 and https://docs.docker.com/engine/admin/logging/overview/
-
-TODO is there a limit that a container root file system can use? Running df seems to always return the same value for free disk space as the host.
-
-Alternative log drivers can be used by specifying the `--log-driver <driver>` argument (and optionally driver-specific `--log-opt` arguments) when starting the docker daemon manually with the `docker daemon` command. The daemon-level log driver can be overridden by specifying the same arguments to `docker run` or `docker create`. <sub>[reference](https://docs.docker.com/engine/admin/logging/overview/)</sub>.
-
-- none	Disables any logging for the container. docker logs won’t be available with this driver.
-- json-file	Default logging driver for Docker. Writes JSON messages to file.
-- syslog	Syslog logging driver for Docker. Writes log messages to syslog.
-- journald	Journald logging driver for Docker. Writes log messages to journald.
-- gelf	Graylog Extended Log Format (GELF) logging driver for Docker. Writes log messages to a GELF endpoint like Graylog or Logstash.
-- fluentd	Fluentd logging driver for Docker. Writes log messages to fluentd (forward input).
-- awslogs	Amazon CloudWatch Logs logging driver for Docker. Writes log messages to Amazon CloudWatch Logs.
-- splunk	Splunk logging driver for Docker. Writes log messages to splunk using HTTP Event Collector.
-- etwlogs	ETW logging driver for Docker on Windows. Writes log messages as ETW events.
-- gcplogs	Google Cloud Logging driver for Docker. Writes log messages to Google Cloud Logging.
-
-TODO check at least journald https://docs.docker.com/engine/admin/logging/journald/ and syslog drivers
-
-TODO using alternative logging drivers with orchestration tools.
+For other logging options, see here: [Docker Logging]({% post_url 2016-08-14-docker-logging %}).
 
 ### Reading log entries
 
 When using the json-file or the journald driver, the logs can be retrieved from an existing container using `docker logs <vm-name>` <sub>[reference](https://docs.docker.com/engine/reference/commandline/logs/)</sub>. This can be useful during development and testing.
-TODO where are json-file and journald logs stored?
+For other logging drivers, refer to the platform or logging driver -specific documentation on how to retrieve the generated log entries.
 
 Useful arguments:
 
@@ -180,9 +179,7 @@ Useful arguments:
 - Add `--follow` (`-f`) flag to keep following the log (use Ctrl-C to exit).
 - Add `--timestamps` (`-t`) to include timestamps as well.
 
-NOTE The logs can also be retrieved using the remote API (TODO link to external instructions). TODO is this actually relevant?
-
-TODO Otherwise, refer to the platform or logging driver -specific documentation on how to retrieve the generated log entries.
+NOTE The logs can also be retrieved using the remote API. Logging and monitoring utilities make use of the remote API.
 
 Stopping a Container
 -----------------------
@@ -190,7 +187,24 @@ Stopping a Container
 - `docker stop -t <timeout-seconds> <container-name>` Terminate container with SIGTERM and SIGKILL after timeout-seconds (default: 10 seconds) <sub>[reference](https://docs.docker.com/engine/reference/commandline/kill/)</sub>.
 - `docker kill <container-name>` Terminate container with SIGKILL <sub>[reference](https://docs.docker.com/engine/reference/commandline/kill/)</sub>.
 - `docker kill docker kill -s=<signal> <container-name>` Terminate the container by sending the specified signal to the process running in the container e.g. SIGQUIT for nginx <sub>[reference](https://docs.docker.com/engine/reference/commandline/kill/)</sub>.
-- `docker rm <container-name>` Remove a containerL <sub>[reference](https://docs.docker.com/engine/reference/commandline/rm/)</sub>.
+
+Removing Containers
+-------------------
+
+### Single container
+
+To remove a container, use `docker rm -v <container-name>` <sub>[reference](https://docs.docker.com/engine/reference/commandline/rm/)</sub>.
+
+Using the `-v` switch causes docker to remove any associated (unnamed) volumes as well.
+
+### All stopped containers
+
+Do `docker rm $(docker ps -aq)` on linux or `FOR /f "tokens=*" %i IN ('docker ps -a -q') DO docker rm %i` on windows.
+
+Running containers are not removed but do generate error messages. Add `--filter status=exited` to suppress the error message.
+
+TODO If not using the `--no-trunc` argument to `ps`, the ID will be truncated to 12 characters.
+The 12-character ID will be autocompleted in other commands like `rm`, but is it unique?
 
 Accessing a Container's Terminal
 --------------------------------
@@ -213,6 +227,6 @@ Update an Existing Container
 ```
 docker stop/kill <container>
 docker rm <container>
-docker build -t <container>
+docker build -t <container> .
 docker run ...
 ```
