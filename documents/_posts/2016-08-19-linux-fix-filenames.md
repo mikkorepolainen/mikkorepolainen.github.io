@@ -33,10 +33,14 @@ Problems With Filenames
 - Leading and trailing whitespace: whitespace in the beginning is just annoying, but it seems that some component along the way during a copy operation is unable to tell the difference between directories with the same name but different amount of whitespace at the end (e.g. `/test/` and `/test /`).
 
 I was able to sanitize the filenames with the following commands, although the performance was not so good.
-Add the `-n` flag after each `rename` command for dry run. *Use at your own risk!*
 
 Shell Commands
 ===
+
+Open a terminal, `cd` to the directory with the directory structure requiring treatment and run the commands from there.
+Add the `-n` flag after each `rename` command for dry run.
+
+**Use these commands at your own risk!**
 
 Remove Illegal Characters
 ---
