@@ -52,7 +52,7 @@ Here, I couldn't use the `/` character in the expression because `{}` is the fil
 Remove Trailing Dots
 ---
 
-`find -depth -execdir rename "s/[\.]*$//" "{}" \;`
+`find -depth -execdir rename "s/[\.]+$//" "{}" \;`
 
 Trim Leading Whitespace
 ---
