@@ -24,43 +24,46 @@ I recently had to move a big media directory (lots of files in many directories 
 As you might expect, there were a lot of problems with file and directory names.
 After some frantic googling and testing, I managed to piece together the information presented here.
 
-Problems with filenames
+Problems With Filenames
 =======================
 
 - Illegal characters in filenames: `\:*?"<>|`. `/` is also illegal but it's illegal on linux also.
 - Trailing dots (at least in directory names) cause the name to be shortened to a jumble of characters.
 - There can be linefeed and tab characters in linux filenames (use `find . -name $'*\n*'` and `find . -name $'*\t*'` to find them).
-- Whitespace in beginning and end: whitespace in the beginning is just annoying, but it seems that some component along the way during a copy operation is unable to tell the difference between directories with the same name but different amount of whitespace at the end (e.g. `/test/` and `/test /`).
+- Leading and trailing whitespace: whitespace in the beginning is just annoying, but it seems that some component along the way during a copy operation is unable to tell the difference between directories with the same name but different amount of whitespace at the end (e.g. `/test/` and `/test /`).
 
 I was able to sanitize the filenames with the following commands, although the performance was not so good.
 Add the `-n` flag after each `rename` command for dry run. *Use at your own risk!*
 
-Remove illegal characters
-=========================
+Shell Commands
+===
+
+Remove Illegal Characters
+---
 
 `find -depth -execdir rename "s/[\\:*?\"<>|\n]//g" "{}" \;`
 
 Here, I couldn't use the `/` character in the expression because `{}` is the file/dir name prefixed with `./`. The entire result string is included in the match, and therefore, for example, `./test.txt` would be renamed to `.test.txt`.
 
-Remove trailing dots
-====================
+Remove Trailing Dots
+---
 
 `find -depth -execdir rename "s/[\.]*$//" "{}" \;`
 
-Trim whitespace from beginning
-==============================
+Trim Leading Whitespace
+---
 
 `find -depth -execdir rename "s/^(\.\/)\s+/$1/" "{}" \;`
 
 The `(\.\/)` and `$1` bits preserve the `./` in the beginning to prevent `rename` from attempting to rename the file or dir with the same name.
 
-Trim whitespace from end
-========================
+Trim Trailing Whitespace
+---
 
 `find -depth -execdir rename "s/\s+$//" "{}" \;`
 
-Replace whitespace with underscores
-===================================
+Replace Remaining Whitespace With Underscores
+---
 
 This is a bonus for those who are allergic to whitespace in general
 
