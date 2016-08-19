@@ -24,7 +24,8 @@ I recently had to move a big media directory (lots of files in many directories 
 As you might expect, there were a lot of problems with file and directory names.
 After some frantic googling and testing, I managed to piece together the information presented here.
 
-Problems with filenames:
+Problems with filenames
+=======================
 
 - Illegal characters in filenames: `\:*?"<>|`. `/` is also illegal but it's illegal on linux also.
 - Trailing dots (at least in directory names) cause the name to be shortened to a jumble of characters.
@@ -34,27 +35,32 @@ Problems with filenames:
 I was able to sanitize the filenames with the following commands, although the performance was not so good.
 Add the `-n` flag after each `rename` command for dry run. *Use at your own risk!*
 
-*Remove illegal characters*
+Remove illegal characters
+=========================
 
 `find -depth -execdir rename "s/[\\:*?\"<>|\n]//g" "{}" \;`
 
 Here, I couldn't use the `/` character in the expression because `{}` is the file/dir name prefixed with `./`. The entire result string is included in the match, and therefore, for example, `./test.txt` would be renamed to `.test.txt`.
 
-*Remove trailing dots*
+Remove trailing dots
+====================
 
 `find -depth -execdir rename "s/[\.]*$//" "{}" \;`
 
-*Trim whitespace from beginning*
+Trim whitespace from beginning
+==============================
 
 `find -depth -execdir rename "s/^(\.\/)\s+/$1/" "{}" \;`
 
 The `(\.\/)` and `$1` bits preserve the `./` in the beginning to prevent `rename` from attempting to rename the file or dir with the same name.
 
-*Trim whitespace from end*
+Trim whitespace from end
+========================
 
 `find -depth -execdir rename "s/\s+$//" "{}" \;`
 
-*Replace whitespace with underscores*
+Replace whitespace with underscores
+===================================
 
 This is a bonus for those who are allergic to whitespace in general
 
