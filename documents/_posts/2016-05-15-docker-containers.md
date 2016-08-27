@@ -113,17 +113,20 @@ Official tutorial [here](https://docs.docker.com/engine/tutorials/dockervolumes/
 VOLUME ["<path in container>"]
 ```
 
-The mounted volume will show as a directory in the volumes directory, for example, `/var/lib/docker/volumes/<volume-name>/_data/` and is populated with files from the container image.
+The volume will show as a directory in the volumes directory, for example, `/var/lib/docker/volumes/<volume-name>/_data/` and is populated with files from the container image.
 The `<volume-name>` is a generated identifier.
 The path must be an absolute path.
 
 The specified volume definition will be overridden if using the same `<path in container>` when creating/running the container using the `-v` option.
 
+TODO 3 ways: automatic (no name), named, mount
+TODO mount shared-storage volume
+
 ### Run or Create
 
 - `-v <path in container>`: host volume name is generated, contents from image are copied over.
 - `-v <name>:<path in container>` where name does not start with a forward slash: host volume name is `<name>` under volumes directory. If the named volume exists already, the contents will not be affected by image contents even when container is removed and re-created. Otherwise, the contents are copied over from the image.
-- `-v <path on host>:<path in container>`: host volume in specified (absolute) path. Image contents are not copied on host at all (host directory completely overrides the directory or file in the container).
+- `-v <path on host>:<path in container>`: host volume in specified (absolute) path. Image contents are not copied on host at all (host directory completely overrides the directory or file in the container). TODO if the dir is empty, will it be prepopulated from image?
 
 ### Existing volumes
 
