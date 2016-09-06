@@ -53,27 +53,27 @@ Run `docker-machine create --driver <driver name> -h` for a list of supported dr
 Examples
 ========
 
-### Creating a local VM on VirtualBox
+## Creating a local VM on VirtualBox
 
 `docker-machine create --driver virtualbox <vm-name>`
 
 For more options, refer to the [documentation](https://docs.docker.com/machine/drivers/virtualbox/).
 
-### Creating a local VM on Hyper-V
+## Creating a local VM on Hyper-V
 
 On modern computers running a recent version of windows, you can use the native Hyper-V platform instead of VirtualBox. This requires turning on the Hyper-V virtualization windows features and enabling Virtualization Extensions in BIOS (e.g. intel vt-x or amd-v). Google for enabling virtualization extensions / virtualization technology for your hardware. Note that VirtualBox won't work while Hyper-V is enabled. One set of instructions can be found [here](https://blogs.technet.microsoft.com/canitpro/2014/03/10/step-by-step-enabling-hyper-v-for-use-on-windows-8-1/).
 
-#### Setting Up Hyper-V and Networking for Docker
+### Setting Up Hyper-V and Networking for Docker
 
 Follow instructions [here](https://stebet.net/installing-docker-tools-on-windows-using-hyper-v/) or [here](https://chipsncookies.com/2015/run-docker-on-hyper-v-with-docker-machine/) for setting up docker to use Hyper-V. You must run all docker-machine commands in a terminal launched as administrator, including listing machines (Hyper-V controlled instances cannot be controlled unless running as administrator).
 
 In a nutshell, you must create a virtual network switch in Hyper-V Manager (local machine -> Virtual Switch Manager... -> New virtual network switch). For the switch type, you can select either external (bridge the VM through a NIC on your computer) or internal (accessible only from host). TODO [NAT switch](https://4sysops.com/archives/native-nat-in-windows-10-hyper-v-using-a-nat-virtual-switch/)?
 
-##### External Switch
+#### External Switch
 
 To expose the VM to the surrounding network, select the External virtual switch type. In the switch configuration, select the appropriate External network (physical network adapter). The VM will be visible as <vm-name> in the surrounding network and gets an IP address from the network's dhcp service unless explicitly set. The VM is also vulnerable to changes in the network, e.g. if your computer is a laptop that you use in multiple networks. TODO does shutting down the machine help?
 
-##### Internal Switch
+#### Internal Switch
 
 An internal switch does not expose the machine to the surrounding network but does not permit access outside either by default. You can use internet connection sharing to facilitate outbound network connections [example](https://www.packet6.com/allowing-windows-8-1-hyper-v-vm-to-work-with-wifi/). (Note that if you already have an external virtual switch using the same physical interface, then it seems that you need to share the existing external virtual network interface instead of the physical one.) This way the VM is only accessible from the local machine but is not disturbed by changes in the network, which is likely, for example, on a laptop that you use in multiple networks.
 
@@ -92,7 +92,7 @@ It may be safer to create an external virtual switch in addition to the internal
 The internal virtual switch will be routed automatically through the external switch.
 No additional steps are required, but if you have other VMs on your computer you may need to restart them (or exit and start Docker for Windows again).
 
-#### Creating the VM
+### Creating the VM
 
 Run `docker-machine create --driver hyperv --hyperv-virtual-switch <Virtual Switch Name> <vm-name>` as administrator.
 
@@ -117,7 +117,7 @@ Virtual Switch Name defaults to the first virtual switch found.
 
 For more options, refer to the [documentation](https://docs.docker.com/machine/drivers/hyper-v/).
 
-### Creating a VM on KVM (locally)
+## Creating a VM on KVM (locally)
 
 Managing docker hosts on KVM works only locally at the moment since the driver used below does not yet have remote management capabilities.
 
@@ -138,7 +138,7 @@ See [Virtualization With KVM]({% post_url 2015-10-07-virtualization-with-kvm %}#
 The VM created this way has two network interfaces, one in the docker-machines network and the other on the virtual bridge or the specified network. The `docker-machine ip <vm-name>` command returns the ip address in the docker-machines network.
 To find out the bridged ip address of the VM, use `docker-machine ssh <vm-name> "ip -one -4 addr show dev eth0|cut -f7 -d' '"`
 
-### Generic
+## Generic
 
 Use this driver to set up docker engine on existing hosts.
 
@@ -169,9 +169,10 @@ Run `visudo` as root and add the `NOPASSWD:` bit on the following line
 
 If that does not work, try adding the line `<user> ALL=(ALL) NOPASSWD:ALL` instead with the correct ssh username as `<user>`.
 
-TODO might not be required anymore  
-https://blog.dahanne.net/2015/10/07/adding-an-existing-docker-host-to-docker-machine-a-few-tips/  
-https://github.com/docker/machine/issues/1569
+TODO might not be required anymore:
+
+- https://blog.dahanne.net/2015/10/07/adding-an-existing-docker-host-to-docker-machine-a-few-tips/  
+- https://github.com/docker/machine/issues/1569
 
 See [here](https://help.ubuntu.com/community/Sudoers) and [here](http://askubuntu.com/questions/159007/how-do-i-run-specific-sudo-commands-without-a-password) for more information.
 
@@ -182,7 +183,7 @@ Then, on local host, run `docker-machine create --driver generic --generic-ip-ad
 
 For more information, refer to the [documentation](https://docs.docker.com/machine/drivers/generic/).
 
-### Creating a remote VM on Azure
+## Creating a remote VM on Azure
 
 `docker-machine create --driver azure --azure-subscription-id <Subscription ID> --azure-location <Region> --azure-size <Size> --azure-vnet <VNet> --azure-subnet <Subnet> --azure-resource-group <Resource Group> <vm-name>`
 
@@ -213,7 +214,7 @@ TODO errors
 
 For more options, refer to the [documentation](https://docs.docker.com/machine/drivers/azure/).
 
-### Creating a remote VM on AWS
+## Creating a remote VM on AWS
 
 TODO
 
