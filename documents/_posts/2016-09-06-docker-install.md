@@ -1,0 +1,96 @@
+---
+layout: document
+title: Installing docker
+description: Docker installation instructions
+modified: 2016-09-06 23:59:00
+relativeroot: ../../
+permalink: documents/docker-install
+type: document
+tags:
+- Docker
+category: documents
+published: true
+hidden: false
+---
+
+Linux
+=====
+
+Quick install: `curl -sSL https://get.docker.com/ | sh`
+
+Add user to docker group for use without sudo:
+
+- `sudo usermod -aG docker <user>`
+- Restart the docker service (e.g. `sudo service docker restart` on Ubuntu)
+- Log out and back in again.
+
+Removing:
+
+{% highlight bash %}
+apt-get purge docker-engine
+apt-get autoremove --purge docker-engine
+rm -rf /var/lib/docker
+{% endhighlight %}
+
+Note that the last command removes also all volumes and configuration data from containers.
+
+Additional tools must be installed separately, e.g. docker-compose, docker-machine.
+
+Windows or Mac OS X
+===================
+
+There are two options for installing on [Windows](https://docs.docker.com/engine/installation/windows/) or [Mac OS X](https://docs.docker.com/engine/installation/mac/): Docker Toolbox and Docker for Windows/Mac. The latter is a newer and better offering.
+
+## Docker Toolbox
+
+NOTE I suppose the docker toolbox will be deprecated soon, use Docker for Windows/Mac instead.
+
+Download and install [docker toolbox](https://www.docker.com/products/docker-toolbox).
+The toolbox contains the docker tools (including docker-machine and docker-compose), Kitematic (an UI for managing containers) and Oracle VirtualBox installer.
+
+If you don't plan to run containers on top of a local VirtualBox instance, then you can leave VirtualBox unchecked in the installer (e.g. if you plan to use Hyper-V on windows).
+
+### Local Container Host for Development
+
+Running Kitematic spins up a new local VM called `default` on top of VirtualBox.
+At the time of writing, the Kitematic UI only supports the VirtualBox driver and a local VM called `default`
+(you can have a stab at the kitematic source code and compile it yourself though, see [here](http://agup.tech/2015/08/14/hacking-at-kitematic-with-hyper-v-on-windows-10/))).
+
+Alternatively, you can run `docker-machine create --driver <driver name> <vm-name>` on the command line followed by `docker-machine start <vm-name>`.
+
+Read [Docker Hosts]({% post_url 2016-05-15-docker-hosts %}) for information on creating local hosts using docker-machine (e.g. creating a host on Hyper-V instead of VirtualBox on windows).
+
+## Docker for Windows/Mac
+
+A more native-like replacement for docker toolbox. The tool is in beta stage at the time of writing (invite token required).
+Uses Hyper-V on Windows and xhyve on mac as the virtualization host. See [here](https://beta.docker.com/docs/) for more info.
+Community forums can be found here: [windows](https://forums.docker.com/c/docker-for-windows), [mac](https://forums.docker.com/c/docker-for-mac).
+
+To install, download and run the installer (InstallDocker.msi on windows, Docker.dmg on mac).
+This installs the command line tools, sets up a VM (named MobyLinuxVM) on Hyper-V/xhyve and installs a shell for controlling the VM (whale icon in status bar).
+
+The installer provides an option for launching the virtual machine after installation.
+The beta version requires an invite token on first startup.
+
+The whale icon on the status bar can be used to access virtual machine settings (CPUs, Memory, automatic startup)
+and to shut down the virtual machine (exit). The VM can be started again by running the tool from the menu.
+
+The installation also sets up a DNS service that forwards the `docker` address to the VM (e.g. you can use  `http://docker:<port>` on the host to access a website running in a container).
+
+The command line environment will point to the local VM by default.
+
+Running Disposable Test Containers
+============================
+
+To get a container up with bash, run for example `docker run -it --rm ubuntu bash`.
+This should pull the ubuntu image and start a container with the bash shell.
+Type `exit` to stop the container.
+
+Image with basic networking tools (e.g. `curl`) not included for example in the ubuntu image: `docker run -it --rm joffotron/docker-net-tools`. Type `exit` to stop the container.
+
+To get a container up with a web server, run for example `docker run -d -p 8080:80 --name webtest nginx`.
+This should start a blank nginx web server accessible on port 8080 of the docker host machine.
+Then run `docker stop webtest` and `docker rm webtest` to kill and remove the container.
+
+Specifying the `--rm` flag causes the container to be removed automatically when the main process exits.
+TODO this does not work in the nginx example when running without `-d` because `Ctrl-C` does not stop the process and the stop command does not terminate the main process gracefully either. Signaling the container with SIGQUIT stops the container but it still does not get removed.

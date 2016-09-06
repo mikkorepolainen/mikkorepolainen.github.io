@@ -1,35 +1,31 @@
 ---
 layout: document
-title: Docker Hosts
+title: Docker Machine
 description: Using Docker Machine
-modified: 2016-09-05 23:59:00
+modified: 2016-09-06 23:59:00
 relativeroot: ../../
 permalink: documents/docker-machine
 type: document
 tags:
 - Docker
 - Docker Machine
-- KVM
-- Azure
-- AWS
 category: documents
 published: true
-hidden: true
+hidden: false
 ---
 
-Docker Machine can be used to quickly provision virtual machines for use as docker hosts or for controlling existing hosts (using the generic driver).
+[Docker Machine](https://www.docker.com/products/docker-machine) can be used to quickly provision virtual machines for use as docker hosts or for controlling existing hosts (using the generic driver).
 There is a selection of drivers available for both local and remote virtualization hosts/providers.
 Check the [official documentation](https://docs.docker.com/machine/drivers/) for a list of available drivers and driver-specific documentation.
 
-The tool also helps in configuring the command line tools to point to an imported docker host instance (`docker-machine env <vm-name>`) even if provisioning or management is not required.
+The tool also helps in configuring the command line tools to point to a docker host instance (`docker-machine env <vm-name>`).
 
-Not suitable for production use due to the lack of support for moving machine connectivity configurations across workstations.
-Only feasible use case is provisioning local machines for dev/test.
+Note that docker machine is not suitable for deploying and managing production environments, at least due to the lack of support for moving machine connectivity configurations across workstations.
+Therefore the only feasible use case is provisioning local or remote machines for development and testing purposes for a single user.
 
-Resources
-=========
-
+- [Product information](https://www.docker.com/products/docker-machine)
 - [Official documentation](https://docs.docker.com/machine/)
+- [Drivers](https://docs.docker.com/machine/drivers/)
 
 Installation
 ============
@@ -313,9 +309,9 @@ TODO Apparently there used to be a "none" driver available that could be used fo
 
 TODO follow these:
 
-https://github.com/docker/machine/issues/23  
-https://github.com/docker/machine/pull/29  
-https://github.com/docker/machine/issues/1328
+ - https://github.com/docker/machine/issues/23  
+ - https://github.com/docker/machine/pull/29  
+ - https://github.com/docker/machine/issues/1328
 
 Interacting With the Docker Host
 ================================
