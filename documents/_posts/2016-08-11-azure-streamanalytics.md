@@ -21,7 +21,7 @@ Links
 - PowerShell https://azure.microsoft.com/en-us/documentation/articles/stream-analytics-monitor-and-manage-jobs-use-powershell/
 - Management SDK https://azure.microsoft.com/en-us/documentation/articles/stream-analytics-dotnet-management-sdk/
 - Query examples https://azure.microsoft.com/en-us/documentation/articles/stream-analytics-stream-analytics-query-patterns/
-- Pricing https://azure.microsoft.com/en-us/pricing/details/event-hubs/
+- Pricing https://azure.microsoft.com/en-us/pricing/details/stream-analytics/
 - Tumbling windows http://www.desertislesql.com/wordpress1/?p=961
 - Scaling https://azure.microsoft.com/en-us/documentation/articles/stream-analytics-scale-jobs/
 
