@@ -1,7 +1,7 @@
 ---
 layout: document
 title: Real-time Web Technologies
-description: Notes about real-time web technologies
+description: Notes about real-time web technologies and two-way communication on the web
 modified: 2016-09-19 23:59:00
 relativeroot: ../../
 permalink: documents/real-time-web-tech
@@ -16,6 +16,8 @@ category: documents
 published: true
 hidden: true
 ---
+
+TODO WebHooks
 
 # Resources
 

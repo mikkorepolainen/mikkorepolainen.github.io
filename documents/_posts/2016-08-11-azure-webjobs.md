@@ -20,6 +20,7 @@ Continous jobs require that the web app hosting the job is configured with the "
 
 TODO Use cases: when to and when not to, alternatives
 
+TODO [Azure WebJobs with .NET Core RC2](https://blog.kloud.com.au/2016/06/08/azure-webjobs-with-dotnet-core-rc2/)
 
 Dashboard
 ------------
@@ -68,7 +69,7 @@ Graceful Shutdown
  - https://github.com/Azure/azure-webjobs-sdk/blob/master/src/Microsoft.Azure.WebJobs.Host/WebjobsShutdownWatcher.cs
  - http://stackoverflow.com/questions/22429769/graceful-shutdown-of-azure-webjobs
  - http://stackoverflow.com/questions/24513448/how-to-prevent-azure-webjob-from-starting-up-after-publishing
- - 
+ -
 
 Continuous/Timers
  - http://stackoverflow.com/questions/29625813/how-to-make-azure-webjob-run-continuously-and-call-the-public-static-function-wi
