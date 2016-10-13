@@ -3,6 +3,7 @@ layout: post
 title: AngularJS Cache-Busting
 relativeroot: ../../../../
 category: posts
+excerpt_separator: <!--more-->
 ---
 
 AngularJS templates or views not getting refreshed in browser after a new version has been published?

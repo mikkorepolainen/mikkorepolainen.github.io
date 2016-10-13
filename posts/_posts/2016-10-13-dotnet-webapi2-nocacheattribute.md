@@ -3,6 +3,7 @@ layout: post
 title: .NET WebAPI 2 NoCacheAttribute
 relativeroot: ../../../../
 category: posts
+excerpt_separator: <!--more-->
 ---
 
 Attribute for preventing .NET WebAPI 2 GET requests from being cached on the client, namely IE11 which uses aggressive caching.
