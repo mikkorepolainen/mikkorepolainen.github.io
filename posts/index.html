@@ -9,7 +9,9 @@ relativeroot: ../
     {% for p in site.categories.posts %}	
       <p><strong>{{ p.date | date: "%Y-%m-%d" }} <a href="{{page.relativeroot}}{{ p.url | remove_first:'/' }}">{{ p.title }}</a></strong></p>
 
-      {{ p.content }}
+      <!--{{ p.content }}-->
+	  <!--{{ p.excerpt | remove: '<p>' | remove: '</p>' }}-->
+	  {{ p.excerpt }}
 
       {% if p.tags.size > 0 %}
         <p><br />{% for t in p.tags %}<span class="label">{{t}}</span> {% endfor %}</p>
