@@ -22,7 +22,8 @@ public static class WebApiConfig
         ...
 ```
 
+
 Sources:
 
- - http://stackoverflow.com/questions/16971831/better-way-to-prevent-ie-cache-in-angularjs
- - https://codewala.net/2015/05/25/outputcache-doesnt-work-with-web-api-why-a-solution/
+ - <http://stackoverflow.com/questions/16971831/better-way-to-prevent-ie-cache-in-angularjs>
+ - <https://codewala.net/2015/05/25/outputcache-doesnt-work-with-web-api-why-a-solution/>
