@@ -12,7 +12,7 @@ Affects all clients, not only IE11.
 
 Usage: Either decorate individual API methods with `[NoCache]` or globally:
 
-```
+{% highlight c# %}
 ...
 public static class WebApiConfig
 {
@@ -20,7 +20,7 @@ public static class WebApiConfig
     {
         config.Filters.Add(new NoCacheAttribute());
         ...
-```
+{% endhighlight %}
 
 
 Sources:
