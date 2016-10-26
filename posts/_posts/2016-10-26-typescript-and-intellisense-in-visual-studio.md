@@ -18,10 +18,8 @@ If you're getting similar build errors as well, you may need to add `typeRoots` 
 {% highlight json %}
 {
   "compilerOptions": {
-	...
-	"typeRoots": [
-		"node_modules/@types"
-	]
+    ...
+    "typeRoots": ["node_modules/@types"]
   },
   ...
 }
