@@ -2,7 +2,7 @@
 layout: document
 title: Windows Authentication in ASP.NET Core 1.0
 description: Using Windows Authentication in ASP.NET Core 1.0 Web Applications
-modified: 2016-10-28 23:59:00
+modified: 2016-10-30 23:59:00
 relativeroot: ../../
 permalink: documents/aspdotnet-core-windows-authentication
 type: document
@@ -23,7 +23,7 @@ Note that some of the content does not apply to RC1 or earlier versions and may 
  - <https://docs.asp.net/en/latest/fundamentals/servers.html>
  - <https://docs.asp.net/en/latest/publishing/iis.html>
  - <https://github.com/aspnet/Announcements/issues/204>
-
+ 
 # Enable Windows Authentication
 
 The server running the application must be configured to enable windows authentication and disable anonymous authentication.
@@ -31,20 +31,20 @@ If anonymous authentication is enabled, then it will be used by default and no u
 
 ## Hosting Options
 
- - IIS (Express) + Kestrel: Windows authentication is configured in IIS (Express).
+ - IIS + Kestrel: Windows authentication is configured in IIS (or `Properties\launchSettings.json` when debugging with Visual Studio and IIS Express).
  - WebListener: Windows authentication is configured in web host builder programmatically.
 
 At the time of writing, windows authentication only works when the server is hosted on the Windows platform (IIS and WebListener are Windows-only).
+
+Take a look at [ASP.NET Core 1.0 Hosting]({% post_url 2016-10-29-aspdotnet-core-hosting %}) for setting up either hosting option.
 
 Sources:
 
  - <https://docs.asp.net/en/latest/fundamentals/servers.html>
 
-## WebListener
+### WebListener
 
-Install Microsoft.AspNetCore.Server.WebListener from NuGet
-
-Program.cs: add `UseWebListener` as below:
+When using WebListener, you need to set up the authentication scheme in WebListener options in `Program.cs`:
 
 {% highlight c# %}
 using System.IO;
@@ -57,8 +57,8 @@ public static void Main(string[] args)
 	var host = new WebHostBuilder()
 		.UseWebListener(options =>
 		{
-			options.ListenerSettings.Authentication.Schemes = AuthenticationSchemes.NTLM;
-			options.ListenerSettings.Authentication.AllowAnonymous = false;
+			options.ListenerSettings.Authentication.Schemes = AuthenticationSchemes.NTLM; // <--
+			options.ListenerSettings.Authentication.AllowAnonymous = false; // <--
 		})
 		.UseStartup<Startup>()
 		.Build();
@@ -72,21 +72,10 @@ Sources:
 - <https://github.com/aspnet/Announcements/issues/204>
 - <http://stackoverflow.com/questions/37694211/windows-authentication-with-asp-net-core>
 
-## IIS Integration
+### IIS Integration
 
-This is required for all IIS interop scenarios: add `UseIISIntegration()` in the `WebHostBuilder` pipeline in `Program.cs`:
-
-{% highlight c# %}
-var builder = new WebHostBuilder()
-  .UseConfiguration(config)
-  .UseContentRoot(Directory.GetCurrentDirectory())
-  .UseIISIntegration() // <--
-  .UseStartup<Startup>();
-{% endhighlight %}
-
-The declaration is a no-op if not run under IIS so it does not prevent running in self-hosted mode.
-
-If you need to configure the specifics, add configuration in `Startup.cs` in the `ConfigureServices` method:
+When using IIS Integration (Express or not), there are some configuration options that you can tweak.
+Add configuration in `Startup.cs` in the `ConfigureServices` method:
 
 {% highlight c# %}
 services.Configure<IISOptions>(options => {
@@ -101,7 +90,7 @@ All three options default to `true` at least when running on IIS Express through
 
 Source: <https://docs.asp.net/en/latest/fundamentals/servers.html>
 
-## IIS Express (when Debugging from Visual Studio)
+### IIS Express (when Debugging from Visual Studio)
 
 In visual studio, right-click into the project properties and select the Debug tab.
 Check "Enable Windows Authentication" and uncheck "Enable Anonymous Authentication"
@@ -121,40 +110,17 @@ The values are stored in `Properties\launchSettings.json`:
 
 Making this change also forces `forwardWindowsAuthToken` to `true` in `web.config` (`aspNetCore`-element under `system.webServer`) each time you start the app in debug mode.
 
-## IIS Express (directly)
+### IIS
 
-TODO Not verified: none of this affects using IIS Express through the debugger
-
-Enable windows authentication in IIS Express application host configuration `%userprofile%\documents\iisexpress\config\applicationhost.config` or `$(solutionDir)\.vs\config\applicationhost.config`<sub>[source](http://stackoverflow.com/questions/4762538/iis-express-windows-authentication)</sub> when using Visual Studio 2015.
-
-The correct section can be found in configuration -> system.webServer -> security -> authentication -> windowsAuthentication.
-
-The configuration should look as follows.
-
-{% highlight xml %}
-<windowsAuthentication enabled="true">
-    <providers>
-        <add value="Negotiate" />
-        <add value="NTLM" />
-    </providers>
-</windowsAuthentication>
-{% endhighlight %}
-
-TODO May have to remove the `Negotiate` provider as per <http://stackoverflow.com/questions/36946304/using-windows-authentication-in-asp-net>
-
-Sources:
-
-- <http://stackoverflow.com/questions/4762538/iis-express-windows-authentication>
-- <http://stackoverflow.com/questions/36946304/using-windows-authentication-in-asp-net>
-- <http://www.danesparza.net/2014/09/using-windows-authentication-with-iisexpress/>
-- <http://www.codeproject.com/Tips/1022870/AngularJS-Web-API-Active-Directory-Security>
-
-## IIS (>=7)
-
-TODO Verify
+TODO Verify IIS7
+TODO Does not work on earlier IIS versions?
+TODO This does not affect IIS Express when running through the debugger
 
 Enable windows authentication in IIS application host configuration file which can be found in the `system32\inetsrv` directory.
 
+NOTE: IIS Express application configuration file lives in `$(solutionDir)\.vs\config\applicationhost.config`<sub>[source](http://stackoverflow.com/questions/4762538/iis-express-windows-authentication)</sub> when using Visual Studio 2015 (or `%userprofile%\documents\iisexpress\config\applicationhost.config` or somewhere else when using an earlier version).
+TODO not verified using IIS Express directly. The configuration does not affect the behaviour of IIS Express when debugging through Visual Studio.
+
 The correct section can be found in configuration -> system.webServer -> security -> authentication -> windowsAuthentication.
 
 The configuration should look as follows.
@@ -168,61 +134,20 @@ The configuration should look as follows.
 </windowsAuthentication>
 {% endhighlight %}
 
+TODO May have to remove the `Negotiate` provider as per <http://stackoverflow.com/questions/36946304/using-windows-authentication-in-asp-net>?
+
 Windows authentication can also be enabled using the Internet Information Services Manager:
 Go to Authentication and enable the Windows Authentication module.
+
+TODO Need to set `forwardWindowsAuthToken` to `true` in `web.config` (`aspNetCore`-element under `system.webServer`)?
 
 Sources:
 
 - <https://docs.asp.net/en/latest/publishing/iis.html>
 - <http://www.codeproject.com/Tips/1022870/AngularJS-Web-API-Active-Directory-Security>
-
-## Allow both IIS or WebListener
-
-Kestrel does not support windows authentication and WebListener cannot be hosted under IIS, but you can do something like the following in `Program.cs` to enable both hosting options:
-
-{% highlight C# %}
-public static void Main(string[] args)
-{
-	var config = new ConfigurationBuilder()
-		.AddCommandLine(args)
-		.AddEnvironmentVariables(prefix: "ASPNETCORE_")
-		.Build();
-
-	var server = config["server"] ?? "Kestrel";
-
-	var builder = new WebHostBuilder()
-		.UseConfiguration(config)
-		.UseContentRoot(Directory.GetCurrentDirectory())
-		.UseIISIntegration()
-		.UseStartup<Startup>();
-
-	if (string.Equals(server, "Kestrel", StringComparison.OrdinalIgnoreCase))
-	{
-		// IIS does not support WebListener: must run with Kestrel when hosting with IIS or IIS Express
-		Console.WriteLine("Running with Kestrel.");
-
-		builder.UseKestrel();
-	}
-	else if (string.Equals(server, "WebListener", StringComparison.OrdinalIgnoreCase))
-	{
-		// Kestrel does not support windows authentication: use WebListener or host on IIS or IIS Express
-		Console.WriteLine("Running with WebListener.");
-
-		builder.UseWebListener(options =>
-		{
-			options.ListenerSettings.Authentication.Schemes = AuthenticationSchemes.NTLM;
-			options.ListenerSettings.Authentication.AllowAnonymous = false;
-		});
-	}
-
-	var host = builder.Build();
-	host.Run();
-}
-{% endhighlight %}
-
-This way you can debug normally in Visual Studio with IIS Express and start with `dotnet run server=WebListener` in production.
-
-Source: <https://docs.asp.net/en/latest/fundamentals/servers.html>
+- <http://stackoverflow.com/questions/4762538/iis-express-windows-authentication>
+- <http://stackoverflow.com/questions/36946304/using-windows-authentication-in-asp-net>
+- <http://www.danesparza.net/2014/09/using-windows-authentication-with-iisexpress/>
 
 # Identity Impersonation
 
@@ -239,9 +164,9 @@ Sources:
 
 You can access user identity in `.cshtml` files by using, for example:
 
-{% highlight cshtml %}
+{% highlight html %}
 <pre>@Html.Raw(Json.Serialize(User, new Newtonsoft.Json.JsonSerializerSettings() { ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore }))</pre>
-<p>Name: @User.Identity.Name!</p>
+<p>Name: @User.Identity.Name</p>
 <p>Authenticated: @User.Identity.IsAuthenticated</p>
 {% endhighlight %}
 
@@ -258,7 +183,7 @@ public void ConfigureServices(IServiceCollection services)
 
 And in cshtml:
 
-{% highlight cshtml %}
+{% highlight html %}
 @inject IHttpContextAccessor httpContextaccessor
 
 <pre>@Html.Raw(Json.Serialize(HttpContextAccessor.HttpContext.User.Identity, new Newtonsoft.Json.JsonSerializerSettings() { ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore }))</pre>
@@ -267,14 +192,12 @@ And in cshtml:
 
 Source: <http://stackoverflow.com/questions/38945678/access-cookie-in-layout-cshtml-in-asp-net-core>
 
-TODO inject into javascript with script tags?
-
 ## In MCV or WebAPI Controllers
 
-TODO verify
-
 {% highlight c# %}
-var userId = this.User.FindFirstValue(ClaimTypes.NameIdentifier);
+var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+var userName = User.FindFirstValue(ClaimTypes.Name);
+var userName2 = User.Identity.Name;
 {% endhighlight %}
 
 Requires package `Microsoft.AspNetCore.Identity`
@@ -285,11 +208,59 @@ Sources:
 
 ## JavaScript
 
-There is no way that I came across to get at the user information directly in JavaScript.
+There is no way that I came across to get at the windows user information directly in JavaScript, except by injecting through script tags and cshtml.
 
 Source: <http://stackoverflow.com/questions/3013692/getting-windows-username-with-javascript>
 
-# Browser Settings to Enable Automatic Authentication on Windows Clients
+# Calling API Methods from JavaScript
+
+Make sure you include credentials in calls, e.g. with `fetch`:
+
+{% highlight javascript %}
+fetch("/api/SampleData/WeatherForecasts", { credentials: 'include' })
+  .then(response => { ... });
+{% endhighlight %}
+
+# Authorization By Group Membership
+
+NOTE: Local groups (at least the built-in ones) are not recognized by using any of these formats: `BUILTIN\<group>`, `.\<group>` or `<hostname>\<group>`. You need to use the group SID instead.
+
+## Fixed Group
+
+Just add `[Authorize(Roles = @"DOMAIN\Group")]` attribute to the controller
+
+## Programmatically
+
+Check for role membership in controller method and return a status code if not authorized.
+
+[HttpGet("[action]")]
+public IActionResult SomeValue()
+{
+  if (!User.IsInRole(@"DOMAIN\Group")) return StatusCode(403);
+  return Ok("Some Value");
+}
+
+Note that the return type of the method must be `IActionResult`.
+
+## Custom Authorize Attribute
+
+Apparently creating custom authorize attributes is not supported in ASP.NET in general.
+
+Sources:
+
+- <http://stackoverflow.com/questions/31464359/custom-authorizeattribute-in-asp-net-5-mvc-6>
+
+TODO Policy
+
+https://docs.asp.net/en/latest/security/authorization/policies.html
+http://benfoster.io/blog/asp-net-identity-role-claims
+http://stackoverflow.com/questions/31464359/custom-authorizeattribute-in-asp-net-5-mvc-6
+http://stackoverflow.com/questions/38264791/custom-authorization-attributes-in-asp-net-core
+https://docs.asp.net/en/latest/security/authorization/claims.html
+https://docs.asp.net/en/latest/security/authorization/
+https://docs.asp.net/en/latest/security/
+
+# Browser Settings
 
 If you need automatic windows authentication, then you may need to enable it specifically in the client browser
 
@@ -306,27 +277,9 @@ Sources:
 - <http://www.codeproject.com/Tips/1022870/AngularJS-Web-API-Active-Directory-Security>
 - <http://stackoverflow.com/questions/36946304/using-windows-authentication-in-asp-net>
 	
-# Calling API Methods from JavaScript
-
-Make sure you include credentials in calls, e.g. with `fetch`:
-
-{% highlight es6 %}
-fetch("/api/SampleData/WeatherForecasts", { credentials: 'include' })
-	.then(response => response.json())
-	.then((data: IWeatherForecast[]) => {
-		this.setState({ forecasts: data, loading: false });
-	});
-{% endhighlight %}
-
-# Authorization
-
-## By Group Membership
-
-TODO <http://stackoverflow.com/questions/34746645/aspnet-5-mvc6-windows-auth-roles-authorize-attribute>
-
 # Multiple Domains or No Domain
 
-Developing on a Computer That Is Bound to an Other Domain or on a Non-Domain-Bound Computer:
+Developing on a computer that is bound to another domain or on a non-domain-bound computer:
 
 - <http://codebetter.com/jameskovacs/2009/10/12/tip-how-to-run-programs-as-a-domain-user-from-a-non-domain-computer/>
 - <http://stackoverflow.com/questions/4762538/iis-express-windows-authentication>
