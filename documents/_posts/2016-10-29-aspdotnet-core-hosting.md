@@ -2,7 +2,7 @@
 layout: document
 title: ASP.NET Core 1.0 Hosting
 description: Hosting options for ASP.NET Core 1.0 Web Applications
-modified: 2016-10-30 23:59:00
+modified: 2016-10-31 23:59:00
 relativeroot: ../../
 permalink: documents/aspdotnet-core-hosting
 type: document
@@ -16,6 +16,16 @@ hidden: true
 
 Note that some of the content does not apply to RC1 or earlier versions and may not apply to later versions either.
 
+# Publishing
+
+Publish the application: `dotnet publish -c <Debug/Release>`.
+
+The results are generated in `.\bin\<Debug/Release>\netcoreapp1.0\publish`.
+
+To run the published application from command line, type `dotnet <name-of-dll> <arguments>` (without the `run` command).
+
+Source: <https://docs.microsoft.com/fi-fi/dotnet/articles/core/tools/dotnet-publish>
+
 # Hosting Options
 
  - Kestrel
@@ -26,7 +36,7 @@ Sources:
 
  - <https://docs.asp.net/en/latest/fundamentals/servers.html>
 
-### Kestrel
+## Kestrel
 
 `Program.cs`: Add `UseKestrel` to `WebHostBuilder` as below:
 
@@ -46,7 +56,7 @@ public static void Main(string[] args)
 }
 {% endhighlight %}
  
-### WebListener
+## WebListener
 
 Install Microsoft.AspNetCore.Server.WebListener from NuGet
 
@@ -73,9 +83,11 @@ Sources:
 
 - <https://github.com/aspnet/Announcements/issues/204>
 
-### IIS
+## IIS
 
-This should work for IIS Express and IIS version 7 and above (TODO verify)
+This should work for both IIS Express and IIS version 7 and above
+
+### Application
 
 `Program.cs`: Add `UseKestrel` and `UseIISIntegration` to `WebHostBuilder` as below:
 
@@ -99,16 +111,62 @@ services.Configure<IISOptions>(options => {
 });
 {% endhighlight %}
 
-TODO more instructions from <https://docs.asp.net/en/latest/publishing/iis.html>
+Add the following entries to the `tools` and `scripts` sections in `project.json` if not present:
+
+{% highlight json %}
+{
+  ...,
+  "tools": {
+    ...,
+    "Microsoft.AspNetCore.Server.IISIntegration.Tools": "1.0.0-preview2-final"
+  },
+  "scripts": {
+    ...,
+    "postpublish": "dotnet publish-iis --publish-folder %publish:OutputPath% --framework %publish:FullTargetFramework%"
+  },
+  ...
+}
+{% endhighlight %}
+
+The `publish-iis` tool fills in the appropriate `processPath` and `arguments` in the `web.config` file behind the scenes when you run `dotnet publish`.
+
+### Dependencies
+
+Install the following dependencies on the target server:
+
+- .NET 4.5.1
+- .NET Core Windows Server Hosting bundle
+
+### Application Pool
+
+The application pool must have the `.NET Framework version` or `.NET CLR version` set to `No Managed Code`.
+You can either configure the application specific pool that is created with the site, or pre-create a shared pool for ASP.NET Core apps (e.g. `AspNetCoreAppPool`).
+
+`C:\Program Files\dotnet\` must be in the path and accessible by the application pool identity.
+Search for `IIS AppPool\DefaultAppPool` in the local directory for the default ApplicationPoolIdentity unless using another identity for the pool.
+
+Restart IIS afterwards.
+
+If you're getting windows errors `Failed to start process with commandline ‘“dotnet” .\<app>.dll’, ErrorCode = ‘0x80070002’.` then restart the server as well.
+
+### Deployment
+
+Deploy the published directory structure from under `.\bin\<Debug/Release>\netcoreapp1.0\publish` into a new directory on the server. Add `logs` folder to the root of the directory.
+
+In IIS Manager, create a new website (Sites -> Right-click -> Add Website).
+Provide a site name, app pool (new site-specific pool or e.g. `AspNetCoreAppPool`), and the path to the deployment directory.
+The app pool identity must also have full access to the deployment directory.
 
 Sources:
 
 - <https://docs.asp.net/en/latest/fundamentals/servers.html>
 - <https://docs.asp.net/en/latest/publishing/iis.html>
+- <https://github.com/dotnet/cli/issues/2135>
+- <https://weblog.west-wind.com/posts/2016/Jun/06/Publishing-and-Running-ASPNET-Core-Applications-with-IIS>
 
-## Enable All Three Options
+# Enable All Three Options
 
-{% highlight C# %}
+{% highlight c# %}
 public static void Main(string[] args)
 {
 	var config = new ConfigurationBuilder()
@@ -148,7 +206,7 @@ public static void Main(string[] args)
 }
 {% endhighlight %}
 
-This way you can debug normally in Visual Studio with IIS Express and start with `dotnet run server=WebListener` in production.
+This way you can select the WebListener server by using the command line argument `--server=WebListener`.
 
 If you want to debug also with Kestrel and WebListener, set up the profiles section in your `Properties/launchSettings.json` as follows:
 
@@ -240,8 +298,16 @@ Add the external file also in the `include` section in your `project.json`:
 
 Source: <http://benfoster.io/blog/how-to-configure-kestrel-urls-in-aspnet-core-rc2>
 
-## Pitfalls
+## Permissions
 
-Note that with WebListener, you can only bind to localhost ports because of access restrictions when using http.sys, unless running with administrator privileges or specifically granting access to the port using something like `netsh http add urlacl url=http://<ip>:<port>/ user=<user>`<sub>[source](https://github.com/aspnet/Hosting/issues/503)</sub>.
+With WebListener, you can only bind to localhost ports when running as a regular user, unless you have been specifically granted access to the port using something like `netsh http add urlacl url=http://<ip>:<port>/ user=<user>`<sub>[source](https://github.com/aspnet/Hosting/issues/503)</sub>.
 
-TODO using WebListener in production?
+TODO Administrators, Local Service, Network Service, specific premissions needed?
+
+# Hosting in a Windows Service
+
+TODO
+
+Sources:
+
+- <http://dotnetthoughts.net/how-to-host-your-aspnet-core-in-a-windows-service/>

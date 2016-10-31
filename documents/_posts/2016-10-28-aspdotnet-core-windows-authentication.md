@@ -2,7 +2,7 @@
 layout: document
 title: Windows Authentication in ASP.NET Core 1.0
 description: Using Windows Authentication in ASP.NET Core 1.0 Web Applications
-modified: 2016-10-30 23:59:00
+modified: 2016-10-31 23:59:00
 relativeroot: ../../
 permalink: documents/aspdotnet-core-windows-authentication
 type: document
@@ -112,10 +112,6 @@ Making this change also forces `forwardWindowsAuthToken` to `true` in `web.confi
 
 ### IIS
 
-TODO Verify IIS7
-TODO Does not work on earlier IIS versions?
-TODO This does not affect IIS Express when running through the debugger
-
 Enable windows authentication in IIS application host configuration file which can be found in the `system32\inetsrv` directory.
 
 NOTE: IIS Express application configuration file lives in `$(solutionDir)\.vs\config\applicationhost.config`<sub>[source](http://stackoverflow.com/questions/4762538/iis-express-windows-authentication)</sub> when using Visual Studio 2015 (or `%userprofile%\documents\iisexpress\config\applicationhost.config` or somewhere else when using an earlier version).
@@ -137,9 +133,9 @@ The configuration should look as follows.
 TODO May have to remove the `Negotiate` provider as per <http://stackoverflow.com/questions/36946304/using-windows-authentication-in-asp-net>?
 
 Windows authentication can also be enabled using the Internet Information Services Manager:
-Go to Authentication and enable the Windows Authentication module.
+Go to the site's Authentication settings, enable Windows Authentication and disable Anonymous Authentication.
 
-TODO Need to set `forwardWindowsAuthToken` to `true` in `web.config` (`aspNetCore`-element under `system.webServer`)?
+Make sure that the `forwardWindowsAuthToken` is set to `true` in `web.config` (`aspNetCore`-element under `system.webServer`).
 
 Sources:
 
@@ -223,46 +219,95 @@ fetch("/api/SampleData/WeatherForecasts", { credentials: 'include' })
 
 # Authorization By Group Membership
 
-NOTE: Local groups (at least the built-in ones) are not recognized by using any of these formats: `BUILTIN\<group>`, `.\<group>` or `<hostname>\<group>`. You need to use the group SID instead.
+Local groups:
 
-## Fixed Group
+- Local groups are written without the domain part or prefixed with the host name: `<group>` or `<hostname>\<group>`.
+- Built-in local groups (e.g. `BUILTIN\Administrators`) are not recognized by name.
+  You have to write the corresponding SID instead.
+- You can find out the SIDs by using the `PsGetSid` tool: <https://technet.microsoft.com/en-us/sysinternals/bb897417>.
+- The `BUILTIN\Administrators` group is not recognized even when using the correct SID.  
 
-Just add `[Authorize(Roles = @"DOMAIN\Group")]` attribute to the controller
+Group membership shows as role membership in ASP.NET Core.
+You can enforce group membership directly with the Authorize attribute, with an authorization policy, or programmatically in the controller methods.
 
-## Programmatically
+## Authorize Attribute
 
-Check for role membership in controller method and return a status code if not authorized.
-
-[HttpGet("[action]")]
-public IActionResult SomeValue()
-{
-  if (!User.IsInRole(@"DOMAIN\Group")) return StatusCode(403);
-  return Ok("Some Value");
-}
-
-Note that the return type of the method must be `IActionResult`.
-
-## Custom Authorize Attribute
-
-Apparently creating custom authorize attributes is not supported in ASP.NET in general.
+Add `[Authorize(Roles = @"<domain>\<group>")]` attribute (or `[Authorize(Roles = @"<domain>\<group1>,<domain>\<group2>")]` for multiple allowed roles) to the controller or method.
 
 Sources:
 
-- <http://stackoverflow.com/questions/31464359/custom-authorizeattribute-in-asp-net-5-mvc-6>
+- <https://docs.asp.net/en/latest/security/authorization/roles.html>
 
-TODO Policy
+## Authorization Policy
 
-https://docs.asp.net/en/latest/security/authorization/policies.html
-http://benfoster.io/blog/asp-net-identity-role-claims
-http://stackoverflow.com/questions/31464359/custom-authorizeattribute-in-asp-net-5-mvc-6
-http://stackoverflow.com/questions/38264791/custom-authorization-attributes-in-asp-net-core
-https://docs.asp.net/en/latest/security/authorization/claims.html
-https://docs.asp.net/en/latest/security/authorization/
-https://docs.asp.net/en/latest/security/
+Add a new policy to service configuration in `ConfigureServices` method in `Startup.cs`:
+
+{% highlight c# %}
+services.AddAuthorization(options =>
+{
+  options.AddPolicy("RequireWindowsGroupMembership", policy => policy.RequireRole(@"<domain>\<group>"));  
+});
+{% endhighlight %}
+
+To get the required group name from settings, add the group name into `appsettings.json` (note the double backslashes):
+
+{% highlight json %}
+{
+  "Logging": {
+    ...
+  },
+  "WindowsGroup": "<domain>\\<group>"
+}
+{% endhighlight %}
+
+Then read it in when configuring authorization:
+
+{% highlight c# %}
+services.AddAuthorization(options =>
+{
+  var windowsGroup = Configuration.GetValue<string>("WindowsGroup");
+  options.AddPolicy("RequireWindowsGroupMembership", policy =>
+  {
+    policy.RequireAuthenticatedUser(); // Policy must have at least one requirement
+    if (windowsGroup != null)
+      policy.RequireRole(windowsGroup);
+  });
+});
+{% endhighlight %}
+
+Use a comma-separated string for multiple allowed roles: `<domain>\<group1>,<domain>\<group2>`.
+
+Finally, add the authorize-attribute on the controller or method: `[Authorize(Policy = "RequireWindowsGroupMembership")]`
+
+Sources:
+
+- <https://docs.asp.net/en/latest/security/authorization/roles.html>
+
+The policy syntax allows for more elaborate authorization scenarios with custom requirements, such as activity/permission-based authentication
+
+- <https://docs.asp.net/en/latest/security/authorization/policies.html>
+- <https://lostechies.com/derickbailey/2011/05/24/dont-do-role-based-authorization-checks-do-activity-based-checks/>
+- <http://benjamincollins.com/blog/practical-permission-based-authorization-in-asp-net-core/>
+- <http://benfoster.io/blog/asp-net-identity-role-claims>
+
+## Programmatically
+
+Check for role membership in controller method and return 403 Forbidden status code if not authorized.
+
+{% highlight c# %}
+[HttpGet("[action]")]
+public IActionResult SomeValue()
+{
+  if (!User.IsInRole(@"Domain\Group")) return StatusCode(403);
+  return Ok("Some Value");
+}
+{% endhighlight %}
+
+Note that the return type of the method must be `IActionResult`.
 
 # Browser Settings
 
-If you need automatic windows authentication, then you may need to enable it specifically in the client browser
+If you need automatic windows authentication, then you may have to enable it specifically in the client browser
 
  - IE (TODO verify same works in EDGE)
     - Advanced -> Enable Integrated Windows Authentication in Internet Options
@@ -276,13 +321,26 @@ Sources:
 
 - <http://www.codeproject.com/Tips/1022870/AngularJS-Web-API-Active-Directory-Security>
 - <http://stackoverflow.com/questions/36946304/using-windows-authentication-in-asp-net>
-	
-# Multiple Domains or No Domain
 
-Developing on a computer that is bound to another domain or on a non-domain-bound computer:
+# Different Domain or No Domain Binding
+
+TODO Does not work with or without VPN connection on remote site (flashes a new console window and dies instantly, unable to capture error message)
+
+If you are developing on a computer that is not bound to a domain, or is bound to a different domain that the app should authenticate against, you can run the server like so:
+
+`runas /netonly /user:<user> "<command> <args...>"`
+
+where `<user>` is `domain\username` or `username@domain`.
+
+IIS: you must establish trust between the two domains to be able to run app pools under a user in different domain than the server.
+
+IIS: does this work at all when running as network service??
+
+Sources:
 
 - <http://codebetter.com/jameskovacs/2009/10/12/tip-how-to-run-programs-as-a-domain-user-from-a-non-domain-computer/>
 - <http://stackoverflow.com/questions/4762538/iis-express-windows-authentication>
 - <http://stackoverflow.com/questions/5331206/how-to-run-iisexpress-app-pool-under-a-different-identity>
 - <http://stackoverflow.com/questions/22058645/authenticate-against-a-domain-using-a-specific-machine/22060458#22060458>
 - <https://forums.iis.net/t/1213147.aspx?How+I+can+run+IIS+app+pool+by+domain+account+>
+- <https://blogs.msdn.microsoft.com/ssehgal/2009/06/23/running-iis6-app-pools-under-a-domain-account-identity/>
