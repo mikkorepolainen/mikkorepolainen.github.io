@@ -83,6 +83,8 @@ services.AddMvc()
 
 Note that although this allows rapid development, returning the EF models directly is still probably a bad idea in all but the simplest scenarios: <http://juristr.com/blog/2012/10/lessions-learned-dont-expose-ef-entities-to-the-client-directly/>
 
+TODO there is no way to prevent JSON serialization from following all relations and unwinding everything into the serialized object => absolutely must use DTOs
+
 ## Related Data
 
 Not possible to load related data using relation name as string: <https://docs.efproject.net/en/latest/querying/related-data.html>.
