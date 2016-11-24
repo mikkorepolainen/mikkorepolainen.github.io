@@ -6,7 +6,7 @@ category: posts
 alt_excerpt: ...or how to solve error TS2339 Property 'value/type/checked/etc...' does not exist on type 'EventTarget'.
 ---
 
-Started getting `error TS2339: Property '<prop>' does not exist on type 'EventTarget'` errors from code that tries to access `event.target.<prop>` after upgrading TypeScript 2.0.3.0 to 2.0.6.0.
+Started getting `error TS2339: Property '<prop>' does not exist on type 'EventTarget'` errors from code that tries to access `event.target.<prop>` where event is of type `React.FormEvent<any>` after upgrading TypeScript 2.0.3.0 to 2.0.6.0 in Visual Studio.
 
 Apparently, the SyntheticEvent<T> interface has changed at some point so, that the target property is no longer generic, but currentTarget is.
 
