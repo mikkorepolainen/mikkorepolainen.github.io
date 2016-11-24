@@ -3,7 +3,7 @@ layout: post
 title: Accessing TypeScript EventTarget Properties
 relativeroot: ../../../../
 category: posts
-alt_excerpt: Or how to solve error TS2339: Property 'value/type/checked/etc...' does not exist on type 'EventTarget'.
+alt_excerpt: ...or how to solve error TS2339 Property 'value/type/checked/etc...' does not exist on type 'EventTarget'.
 ---
 
 Started getting `error TS2339: Property '<prop>' does not exist on type 'EventTarget'` errors from code that tries to access `event.target.<prop>` after upgrading TypeScript 2.0.3.0 to 2.0.6.0.
