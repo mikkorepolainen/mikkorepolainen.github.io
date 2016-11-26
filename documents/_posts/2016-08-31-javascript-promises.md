@@ -92,13 +92,18 @@ function multipleSuccessfulOperations() {
 function unsuccesfulOperation() {
   console.log("unsuccesfulOperation");
   //throw "error"; // Crashes if not handled properly
-  return Promise.reject("error"); // Crashes with "unhandled rejection" if not handled properly
+  //return Promise.reject("error"); // Gives Warning: a promise was rejected with a non-error: [object String]
+  return Promise.reject(new Error("error")); // Crashes with "unhandled rejection" if not handled properly TODO check new Error import
 }
 
 successfulOperation()
 //.then(unsuccesfulOperation()) // Does not work because function call does not return a promise
-//.then(unsuccesfulOperation) // This works as long as no arguments are required
 //.then(function() { return unsuccesfulOperation(); }) // Use this if arguments are required
+.then(unsuccesfulOperation) // This works as long as no arguments are required
+.catch(function(err)
+{
+  console.error("Intermediate Error: ", err); // Error is handled here, program flow continues from next then
+})
 .then(multipleSuccessfulOperations) // If this call is removed, then the next function gets the return value of successfulOperation instead
 .then(function(val)
 {
@@ -110,5 +115,3 @@ successfulOperation()
 });
 
 ```
-
-TODO catching in between
