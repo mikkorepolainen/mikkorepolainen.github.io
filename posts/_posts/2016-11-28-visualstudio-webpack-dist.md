@@ -6,7 +6,7 @@ category: posts
 alt_excerpt: Cannot find module './wwwroot/dist/vendor-manifest.json' after checkout from version control?
 ---
 
-I'm currently working on a .NET Core / React web application using a template, which worked great so far.
+I'm currently working on a .NET Core single page application using the [React Template](https://github.com/aspnet/JavaScriptServices/tree/dev/templates/ReactSpa) for [ASP.NET Core SPA Yeoman Generator](http://blog.stevensanderson.com/2016/05/02/angular2-react-knockout-apps-on-aspnet-core/), which worked great so far.
 However, after getting a fresh checkout, I started experiencing the error `Cannot find module './wwwroot/dist/vendor-manifest.json'` when starting up on top of IIS Express.
 
 Turns out that this is because, by default, the `wwwroot/dist` directory is excluded from version control while the build process depends on the `vendor-manifest.json` file therein.
@@ -29,6 +29,28 @@ I just copied the prepublish step as a new precompile step in `project.json` to 
       "node node_modules/webpack/bin/webpack.js --env.prod"
     ],
     "postpublish": [ "dotnet publish-iis --publish-folder %publish:OutputPath% --framework %publish:FullTargetFramework%" ]
+  },
+  ...
+}
+{% endhighlight %}
+
+Additionally, the `project.json` file is configured to output the `node_modules` directory by default.
+This is **not** required so you can just remove the `"node_modules",` line to prevent unnecessary copying of a large amount of files (unless, perhaps, if you refer to something in there that does not get bundled by webpack).
+
+{% highlight json %}
+{
+  ...,
+  "publishOptions": {
+    "include": [
+      "appsettings.json",
+      "node_modules",
+      "Views",
+      "web.config",
+      "wwwroot"
+    ],
+    "exclude": [
+      "wwwroot/dist/*.map"
+    ]
   },
   ...
 }
