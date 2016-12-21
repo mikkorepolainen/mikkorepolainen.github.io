@@ -19,12 +19,10 @@ I chose to add the headers in the API.
 Add cache headers in the fetch parameters object:
 
 {% highlight javascript %}
-{
-  let headers = new Headers();
-  headers.append('pragma', 'no-cache');
-  headers.append('cache-control', 'no-cache');
-  fetch("/api/...", { headers: headers })...
-}
+let headers = new Headers();
+headers.append('pragma', 'no-cache');
+headers.append('cache-control', 'no-cache');
+fetch("/api/...", { headers: headers })...
 {% endhighlight %}
 
 You can also try adding `cache: 'no-cache'` to the fetch parameters object but I didn't observe any effect.
