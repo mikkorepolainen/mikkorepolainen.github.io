@@ -1,6 +1,6 @@
 ---
 layout: document
-title: Windows Authentication in ASP.NET Core 1.0
+title: Windows Authentication in ASP.NET Core
 description: Using Windows Authentication in ASP.NET Core Web Applications
 modified: 2017-03-27 23:59:00
 relativeroot: ../../

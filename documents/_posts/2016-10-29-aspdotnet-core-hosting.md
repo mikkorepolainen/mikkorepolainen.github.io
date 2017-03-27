@@ -1,6 +1,6 @@
 ---
 layout: document
-title: ASP.NET Core 1.0 Hosting
+title: ASP.NET Core Hosting
 description: Hosting options for ASP.NET Core Web Applications
 modified: 2017-03-27 23:59:00
 relativeroot: ../../
