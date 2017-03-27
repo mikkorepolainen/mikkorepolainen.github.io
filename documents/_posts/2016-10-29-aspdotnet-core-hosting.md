@@ -1,8 +1,8 @@
 ---
 layout: document
 title: ASP.NET Core 1.0 Hosting
-description: Hosting options for ASP.NET Core 1.0 Web Applications
-modified: 2016-12-21 23:59:00
+description: Hosting options for ASP.NET Core Web Applications
+modified: 2017-03-27 23:59:00
 relativeroot: ../../
 permalink: documents/aspdotnet-core-hosting
 type: document

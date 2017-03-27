@@ -1,8 +1,8 @@
 ---
 layout: document
 title: Windows Authentication in ASP.NET Core 1.0
-description: Using Windows Authentication in ASP.NET Core 1.0 Web Applications
-modified: 2016-10-31 23:59:00
+description: Using Windows Authentication in ASP.NET Core Web Applications
+modified: 2017-03-27 23:59:00
 relativeroot: ../../
 permalink: documents/aspdotnet-core-windows-authentication
 type: document
@@ -36,7 +36,7 @@ If anonymous authentication is enabled, then it will be used by default and no u
 
 At the time of writing, windows authentication only works when the server is hosted on the Windows platform (IIS and WebListener are Windows-only).
 
-Take a look at [ASP.NET Core 1.0 Hosting]({% post_url 2016-10-29-aspdotnet-core-hosting %}) for setting up either hosting option.
+Take a look at [ASP.NET Core Hosting]({% post_url 2016-10-29-aspdotnet-core-hosting %}) for setting up either hosting option.
 
 Sources:
 
