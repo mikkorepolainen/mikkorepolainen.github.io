@@ -52,7 +52,7 @@ public static void Main(string[] args)
  
 ## WebListener
 
-Install Microsoft.AspNetCore.Server.WebListener from NuGet
+Install `Microsoft.AspNetCore.Server.WebListener` from NuGet
 
 `Program.cs`: add `UseWebListener` as below:
 
@@ -152,11 +152,7 @@ public static void Main(string[] args)
 		// Kestrel does not support windows authentication: use WebListener or host on IIS or IIS Express
 		Console.WriteLine("Running with WebListener.");
 
-		builder.UseWebListener(options =>
-		{
-			options.ListenerSettings.Authentication.Schemes = AuthenticationSchemes.NTLM;
-			options.ListenerSettings.Authentication.AllowAnonymous = false;
-		});
+		builder.UseWebListener();
 	}
 
 	var host = builder.Build();
@@ -227,7 +223,9 @@ To enable logging, add a `logs` folder to the root of the directory and make sur
 </configuration>
 {% endhighlight %}
 
-Note that in IIS Express the working directory is the solution directory, so you must add the `logs` directory to your solution root and look for the log files there when debugging, or direct the logs into an absolute path instead in `web.config`.
+Logs are not written at all if the path does not exist.
+
+Note that in IIS Express the working directory is the project directory, so you must add the `logs` directory to your project root and look for the log files there when debugging, or direct the logs into an absolute path instead in `web.config`.
 Alternatively, you can specify the working directory in `launchSettings.json` (add `"workingDirectory": "your-path"` under each profile).
 
 To test production behaviour in the debugger, change the `ASPNETCORE_ENVIRONMENT` variable to `Production` instead of `Development` in `launchSettings.json`.
@@ -291,7 +289,7 @@ TODO Administrators, Local Service, Network Service, specific premissions needed
 
 Publish the application: `dotnet publish -c <Debug/Release>`.
 
-The results are generated in `.\bin\<Debug/Release>\netcoreapp1.0\publish`.
+The results are generated in `.\bin\<Debug/Release>\netcoreapp<.NET Core Version>\publish`.
 
 To run the published application from command line, type `dotnet <name-of-dll> <arguments>` (without the `run` command).
 
@@ -304,7 +302,7 @@ Source: <https://docs.microsoft.com/fi-fi/dotnet/articles/core/tools/dotnet-publ
 Install the following dependencies on the target server:
 
 - [.NET 4.5.1](https://www.microsoft.com/en-us/download/details.aspx?id=40779)
-- [.NET Core Windows Server Hosting bundle](https://aka.ms/dotnetcore_windowshosting_1_1_0)
+- [.NET Core Windows Server Hosting bundle 1.0.1](https://go.microsoft.com/fwlink/?LinkID=827547) or [1.1.0](https://aka.ms/dotnetcore_windowshosting_1_1_0)
 
 If the hosting bundle installation fails with `Error 0x80070002: Failed to find payload: DotNetRedist_x64` then install the [VC Redistributable](https://www.microsoft.com/en-us/download/details.aspx?id=48145) first ([download](http://go.microsoft.com/fwlink/?LinkID=615460&clcid=0x409)).
 (Unverified alternative: `DotNetCore.1.0.1-WindowsHosting.exe OPT_INSTALL_REDIST=0`).
@@ -324,7 +322,7 @@ If you're getting windows errors `Failed to start process with commandline â€˜â€
 
 ### Deployment
 
-Deploy the published directory structure from under `.\bin\<Debug/Release>\netcoreapp1.0\publish` into a new directory on the server.
+Deploy the published directory structure from under `.\bin\<Debug/Release>\netcoreapp<.NET Core Version>\publish` into a new directory on the server.
 
 In IIS Manager, create a new website (Sites -> Right-click -> Add Website).
 Provide a site name, app pool (new site-specific pool or e.g. `AspNetCoreAppPool`), and the path to the deployment directory.

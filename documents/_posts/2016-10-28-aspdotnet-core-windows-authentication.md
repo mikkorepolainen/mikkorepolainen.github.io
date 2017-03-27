@@ -11,7 +11,7 @@ tags:
 - Windows Authentication
 category: documents
 published: true
-hidden: true
+hidden: false
 ---
 
 Note that some of the content does not apply to RC1 or earlier versions and may not apply to later versions either.
@@ -66,6 +66,8 @@ public static void Main(string[] args)
 	host.Run();
 }
 {% endhighlight %}
+
+Note: installing package `Microsoft.Net.Http.Server` from NuGet is required for accessing the AuthenticationSchemes class.
 
 Sources:
 
