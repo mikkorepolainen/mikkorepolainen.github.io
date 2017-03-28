@@ -3,7 +3,7 @@ layout: post
 title: Connecting to a public share on a NAS with local credentials from Windows 10
 relativeroot: ../../../../
 category: posts
-alt_excerpt: Windows 10 asks for a password when connecting to public share? Try `<username>@<nas hostname>` for username and just some garbage as the password.
+alt_excerpt: Windows 10 asks for a password when connecting to public share? Try username@host for username and just some garbage as the password.
 ---
 
 TL;DR: Windows 10 asks for a password when connecting to public share? Try `<username>@<nas hostname>` for username and just some garbage as the password.
