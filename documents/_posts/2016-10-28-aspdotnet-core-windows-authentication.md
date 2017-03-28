@@ -2,7 +2,7 @@
 layout: document
 title: Windows Authentication in ASP.NET Core
 description: Using Windows Authentication in ASP.NET Core Web Applications
-modified: 2017-03-27 23:59:00
+modified: 2017-03-28 23:59:00
 relativeroot: ../../
 permalink: documents/aspdotnet-core-windows-authentication
 type: document
@@ -326,7 +326,7 @@ Sources:
 
 # Different Domain or No Domain Binding
 
-TODO Does not work with or without VPN connection on remote site (flashes a new console window and dies instantly, unable to capture error message)
+TODO I did not get this to work from a remote site, with or without VPN connection (flashes a new console window and dies instantly, unable to capture error message)
 
 If you are developing on a computer that is not bound to a domain, or is bound to a different domain that the app should authenticate against, you can run the server like so:
 
