@@ -1,9 +1,9 @@
 ---
 layout: post
-title: TypeScript & IntelliSense in Visual Studio
+title: TypeScript & IntelliSense in Visual Studio 2015
 relativeroot: ../../../../
 category: posts
-alt_excerpt: Resolved "cannot find module" IntelliSense errors when using TypeScript in Visual Studio
+alt_excerpt: Resolved "cannot find module" IntelliSense errors when using TypeScript in Visual Studio 2015
 ---
 
 I had some trouble getting intellisense to recognise types from `node_modules\@types` in a React & ASP.NET Core web application (I used the aspnetcore_spa yeoman generator from <https://github.com/aspnet/JavaScriptServices>).
