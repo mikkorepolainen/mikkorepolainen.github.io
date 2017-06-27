@@ -2,7 +2,7 @@
 layout: document
 title: Docker Machine
 description: Using Docker Machine
-modified: 2016-09-06 23:59:00
+modified: 2017-06-27 23:59:00
 relativeroot: ../../
 permalink: documents/docker-machine
 type: document
@@ -198,11 +198,21 @@ For more information, refer to the [documentation](https://docs.docker.com/machi
 - `<vm-name>` is 3-63 characters long and contains only lower-case alphanumeric characters and hyphens (a hyphen must be preceded and followed by an alphanumeric character). Otherwise creating the virtual hard disk image fails.
 You will need to authenticate by opening a url in a browser and entering an authentication code (both are presented by the tool on the command line).
 
-After a while you will need to re-authenticate with Azure. However, some commands (e.g. `docker-machine ls`) timeout too quickly for you to enter the credentials. If you bump into this issue, use a command with a longer timeout to interact with the host first (e.g. `docker-machine ssh`).
+After a while you will need to re-authenticate with Azure. However, some commands (e.g. `docker-machine ls`) timeout too quickly for you to enter the credentials. If you bump into this issue, use a command with a longer timeout to interact with the host first (e.g. `docker-machine env` or `docker-machine ssh`).
 
-TODO creating a machine in a DevTest Lab. Using the lab VNet (`Dtl<LabName>`) and Resource Group (`<LabName><Random code>`) with or without specifying the existing Subnet (`Dtl<LabName>Subnet`) failed with error `Subnet 'xxx' is not valid in virtual network 'Dtl<LabName>'`
+For more options, refer to the [documentation](https://docs.docker.com/machine/drivers/azure/).
 
-TODO errors
+### Common Errors
+
+#### Occasionally you may see an error message like this one when attempting to authenticate
+
+> Error checking TLS connection: Error creating Azure client: Error deleting stale token file: remove <token file path>.json
+> The process cannot access the file because it is being used by another process.  
+{: .terminal}
+
+It is safe to remove the file in question by hand (it is not really locked)
+
+#### Certificate Errors
 
 > Error checking TLS connection: Error checking and/or regenerating the certs: There was an error validating certificates for host "xxx:2376": tls: DialWithDialer timed out
 > You can attempt to regenerate them using 'docker-machine regenerate-certs [name]'.
@@ -212,7 +222,11 @@ TODO errors
 > Error checking TLS connection: Error creating Azure client: Error deleting stale token file: remove ...\xxx.json: The process cannot access the file because it is being used by another process.
 {: .terminal}
 
-For more options, refer to the [documentation](https://docs.docker.com/machine/drivers/azure/).
+You can regenerate the certificates as instructed but if you are accessing the machine from multiple computers, then the certificates need to be transferred again to any other clients on other computers.
+
+I've observed this happening at least when dropping a VPN connection, then getting resolved by reconnecting to the VPN.
+
+TODO in what circumstances does this happen exactly?
 
 ## Creating a remote VM on AWS
 
