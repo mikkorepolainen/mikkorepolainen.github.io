@@ -198,7 +198,8 @@ For more information, refer to the [documentation](https://docs.docker.com/machi
 - `<vm-name>` is 3-63 characters long and contains only lower-case alphanumeric characters and hyphens (a hyphen must be preceded and followed by an alphanumeric character). Otherwise creating the virtual hard disk image fails.
 You will need to authenticate by opening a url in a browser and entering an authentication code (both are presented by the tool on the command line).
 
-After a while you will need to re-authenticate with Azure. However, some commands (e.g. `docker-machine ls`) timeout too quickly for you to enter the credentials. If you bump into this issue, use a command with a longer timeout to interact with the host first (e.g. `docker-machine env` or `docker-machine ssh`).
+After a while you will need to re-authenticate with Azure. However, some commands (e.g. `docker-machine ls`) timeout too quickly for you to enter the credentials.
+If you bump into this issue, use a command with a longer timeout to interact with the host first (e.g. `docker-machine env` or `docker-machine ssh`).
 
 For more options, refer to the [documentation](https://docs.docker.com/machine/drivers/azure/).
 
