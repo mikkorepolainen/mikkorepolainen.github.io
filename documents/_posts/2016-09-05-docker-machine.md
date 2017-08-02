@@ -2,7 +2,7 @@
 layout: document
 title: Docker Machine
 description: Using Docker Machine
-modified: 2017-06-27 23:59:00
+modified: 2017-08-02 23:59:00
 relativeroot: ../../
 permalink: documents/docker-machine
 type: document
@@ -163,9 +163,7 @@ On ubuntu, one way of accomplishing this is to do the following on the remote ho
 
 Run `visudo` as root and add the `NOPASSWD:` bit on the following line
 
-```
-%sudo   ALL=(ALL:ALL) NOPASSWD:ALL
-```
+`%sudo   ALL=(ALL:ALL) NOPASSWD:ALL`
 
 If that does not work, try adding the line `<user> ALL=(ALL) NOPASSWD:ALL` instead with the correct ssh username as `<user>`.
 
@@ -185,23 +183,64 @@ For more information, refer to the [documentation](https://docs.docker.com/machi
 
 ## Creating a remote VM on Azure
 
-`docker-machine create --driver azure --azure-subscription-id <Subscription ID> --azure-location <Region> --azure-size <Size> --azure-vnet <VNet> --azure-subnet <Subnet> --azure-resource-group <Resource Group> <vm-name>`
+{% highlight bash %}
+docker-machine create --driver azure\
+ --azure-subscription-id <subscription-id>\
+ --azure-location <region>\
+ --azure-size <size>\
+ --azure-vnet <vnet>\
+ --azure-subnet <subnet>\
+ --azure-resource-group <resource-group>\
+ <vm-name>
+{%endhighlight%}
 
 ...where:
 
-- `<Subscription ID>` is your Azure Subscription ID. (Search for Subscriptions in the management portal, look under settings in classic portal.)
-- `<Region>` is the name of the azure region, e.g. "northeurope" (default is "westus"). See [available regions](https://azure.microsoft.com/en-us/regions/) TODO list of valid region codes or just need to guess based on region name?
-- `<Size>` is the pricing tier of the VM, e.g. Basic_A1 (default is Standard_A2). See [VM pricing](https://azure.microsoft.com/en-us/pricing/details/virtual-machines/)).
-- `<VNet>` is the name of the virtual network (default is "docker-machine-vnet").
-- `<Subnet>` is the name of the subnet in the virtual network (default is "docker-machine").
-- `<Resource Group>` is the name of~~~~~ the resource group (default is "docker-machine").
-- `<vm-name>` is 3-63 characters long and contains only lower-case alphanumeric characters and hyphens (a hyphen must be preceded and followed by an alphanumeric character). Otherwise creating the virtual hard disk image fails.
+- `<subscription-id>` is your Azure Subscription ID. (Search for Subscriptions in the management portal, look under settings in classic portal.)
+- `<region>` is the name of the azure region, e.g. "northeurope" (default is "westus"). See [available regions](https://azure.microsoft.com/en-us/regions/) TODO list of valid region codes or just need to guess based on region name?
+- `<size>` is the pricing tier of the VM, e.g. Basic_A1 (default is Standard_A2). See [VM pricing](https://azure.microsoft.com/en-us/pricing/details/virtual-machines/)).
+- `<vnet>` is the name of the virtual network (default is "docker-machine-vnet"). The virtual network is created automatically if it does not exist.
+- `<subnet>` is the name of the subnet in the virtual network (default is "docker-machine"). The subnet is created automatically if it does not exist.
+- `<resource-group>` is the name of the resource group (default is "docker-machine"). The resource group is created automatically if it does not exist.
+- `<vm-name>` is 3-63 characters long and contains only lower-case alphanumeric characters and hyphens (a hyphen must be preceded and followed by an alphanumeric character). **Otherwise creating the virtual hard disk image fails.**
+
 You will need to authenticate by opening a url in a browser and entering an authentication code (both are presented by the tool on the command line).
 
-After a while you will need to re-authenticate with Azure. However, some commands (e.g. `docker-machine ls`) timeout too quickly for you to enter the credentials.
-If you bump into this issue, use a command with a longer timeout to interact with the host first (e.g. `docker-machine env` or `docker-machine ssh`).
+{% highlight bash %}
+Running pre-create checks...
+Microsoft Azure: To sign in, use a web browser to open the page https://aka.ms/devicelogin.
+Enter the code [...] to authenticate.
+{%endhighlight%}
+
+You will need to re-authenticate with Azure occasionally (at least in two week intervals) when running commands against the machine.
+Some commands (e.g. `docker-machine ls`) timeout too quickly for you to enter the credentials.
+When you need to re-authenticate, use a command with a longer timeout so that you have more time to complete the authentication (e.g. `docker-machine env` or `docker-machine ssh`).
 
 For more options, refer to the [documentation](https://docs.docker.com/machine/drivers/azure/).
+
+### Service Principal Authentication
+
+A new feature adds azure service principal authentication which can be used to replace the interactive authentication method, e.g. for headless environments or automation.
+
+Setting up the service principal can be done as follows:
+
+- First, create a service principal in the Azure Portal ([instructions](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-create-service-principal-portal))
+or using the Azure CLI ([instructions](https://docs.microsoft.com/en-gb/azure/azure-resource-manager/resource-group-authenticate-service-principal-cli)).
+- Create a key in the portal if using the portal to create the service principal.
+- The service principal must be assigned to the Owner or Contributor roles in the subscription settings. Read through the above instructions links for details.
+  - Portal: go to your subscription, select Access control (IAM), click Add, choose the Contributor role and then look for the newly created service principal by name.
+
+When the service principal has been set up, you can use the `docker-machine create` with command line switches `--azure-client-id <id>` and `--azure-client-secret <secret>` using values from the service principal.
+Alternatively, specify the service principal values as environment variables `AZURE_CLIENT_ID` and `AZURE_CLIENT_SECRET`.
+
+Note:
+
+- Service Principal is also known as App registration (in the portal).
+- Client ID is also known as Service Principal Name (the guid in the CLI output) and Application ID (in the portal).
+- Client Secret is either the password specified for the CLI operation with the `-p` switch (TODO right?) or the manually added Key in the portal.
+
+For more information, look [here](https://github.com/docker/machine/pull/3665).
+The published Azure driver documentation does not yet reflect this information at the time of writing, but you can dig in [here](https://github.com/docker/machine/pull/3665/files#r74831008).
 
 ### Common Errors
 
@@ -220,7 +259,6 @@ It is safe to remove the file in question by hand (it is not really locked)
 > Be advised that this will trigger a Docker daemon restart which will stop running containers.
 >
 > Stored Azure credentials expired. Please reauthenticate.
-> Error checking TLS connection: Error creating Azure client: Error deleting stale token file: remove ...\xxx.json: The process cannot access the file because it is being used by another process.
 {: .terminal}
 
 You can regenerate the certificates as instructed but if you are accessing the machine from multiple computers, then the certificates need to be transferred again to any other clients on other computers.
@@ -356,6 +394,8 @@ Commands
 - `docker-machine env <vm-name>` get env configuration for CLI
 - `docker-machine ip <vm-name>` get ip address of VM
 - `docker-machine ssh <vm-name>` ssh access
+- `docker-machine scp <vm-name>:<path> <path>` copy file from machine to local directory
+- `docker-machine scp <path> <vm-name>:<path>` copy file from local directory to machine
 - `docker-machine inspect <vm-name>` machine information
 - `docker-machine start <vm-name>` start
 - `docker-machine stop <vm-name>` stop
