@@ -1,8 +1,8 @@
 ---
 layout: document
 title: Virtualization With KVM
-description: Installing and using a KVM virtualization environment on a Lenovo ThinkServer TS140 with Ubuntu 14.04 LTS
-modified: 2015-12-07 16:23:00
+description: Installing and Using a KVM Virtualization Host on Ubuntu
+modified: 2017-08-23 23:59:59
 relativeroot: ../../
 permalink: documents/virtualization-with-kvm
 type: document
@@ -18,13 +18,14 @@ published: true
 
 This document contains the steps required for installing and configuring a KVM virtual host server
 for use as virtualized development lab environment.
-The main requirements were exposing all virtual machines to the local area network (bridged networking)
-and being able to connect to the host from windows clients using the Remote Desktop Protocol.
-The underlying hardware at the time of writing was a Lenovo ThinkServer TS140
-and the chosen operating system was Ubuntu Server 14.04 LTS.
+The main requirement was exposing virtual machines to the ambient local area network (bridged networking).
+
+- Hardware: Lenovo ThinkServer TS140
+- Host OS: Ubuntu Server 16.04 LTS
 
 Hardware & BIOS Setup
 ====================
+
 - BIOS upgrade using a bootable DOS usb stick. Without the BIOS upgrade, system boot invariably failed if an external USB FDD was attached.
 - Boot to BIOS. There's also an option to use an EasySetup disk, but apparently it's only useful when installing a windows OS or VMware ESXi.
 - Enable virtualization extensions in CPU setup (VT)
@@ -34,20 +35,16 @@ Hardware & BIOS Setup
 Operating System
 ====================
 
-Install Ubuntu Server 14.04 LTS
+Install Ubuntu Server 16.04 LTS, select the following features:
 
 - Basic Ubuntu Server
 - OpenSSH server
-- Xfce instead of gnome for RDP connectivity (gnome does not work well with RDP on Ubuntu 14.04)
-- KVM is left unselected in this phase and installed through apt-get later
-
-Remote desktop connectivity is explained in a separate document: [Using xRDP for Remote Desktop Access].
-
-KVM Installation & Host Configuration
-====================
+- Virtualization Host (installs the kvm host packages automatically. Leave unselected for manual installation)
 
 Checking Hardware Virtualization Support
-------------------------------
+====================
+
+After installing the operating system, you can perform various tests to verify virtualization support.
 
 `egrep '(vmx|svm)' --color /proc/cpuinfo` should display vmx or svm in red.
 
@@ -59,39 +56,62 @@ Checking Hardware Virtualization Support
 > KVM acceleration can be used
 {: .terminal}
 
-`virt-host-validate` should give message:
+`virt-host-validate` should give a message like this:
 
 > QEMU: Checking for hardware virtualization		: PASS  
 > QEMU: Checking for device /dev/kvm				: PASS  
 > QEMU: Checking for device /dev/vhost-net		: PASS  
 > QEMU: Checking for device /dev/net/tun			: PASS  
 > LXC: Checking for Linux >= 2.6.26				: PASS
+> ...
 {: .terminal}
 
 `lsmod | grep kvm` should list either kvm_intel or kvm_amd
 
-Installing KVM and Command Line Management Tools
-------------------------------
+### IOMMU (I/O Memory Management Unit) support
 
-Install the following packages using apt-get:
+If the above command produces a warning `IOMMU appears to be disabled in kernel. Add intel_iommu=on to kernel cmdline arguments` then you can enable IOMMU like so:
+
+Edit the file `/etc/default/grub` and add `intel_iommu=on` to the end of the existing GRUB_CMDLINE_LINUX option, separated by whitespace e.g. `GRUB_CMDLINE_LINUX="intel_iommu=on`
+
+Update grub and reboot
+
+> sudo update-grub
+> sudo reboot
+{: .terminal}
+
+(Adapted from [instructions for fedora](https://scottlinux.com/2017/05/10/how-to-enable-iommu-support-in-fedora-linux/))
+
+Installing KVM and Command Line Management Tools
+====================
+
+Install the following packages using apt-get, unless you selected "Virtualization Host" as one of the features during operating system installation:
 
 - `ubuntu-virt-server` metapackage that contains:
 	- `qemu-kvm`
 	- `libvirt-bin`
 	- `openssh-server`
 - `bridge-utils` to manage bridged networking (brctl etc.)
+
+The current user is added to libvirtd group automatically. Use `sudo usermod -a -G libvirtd <user>` to add other users if necessary (log out and back in).
+Check also that you belong to the kvm group and if not, run `sudo usermod -a -G kvm <user>`.
+
+The following packages are recommended:
+
 - `ubuntu-vm-builder` (one option for building virtual machines)
   - `python`
   - `python-vm-builder`
 - `ubuntu-virt-mgmt` metapackage that contains:
 	- `virt-viewer` (for viewing vms)
 	- `virt-manager` (GUI for VM management)
-- `virtinst`
-- `qemu-system`
+- `virtinst` (Programs to create and clone virtual machines)
 - `libguestfs-tools` (tools for accessing and modifying virtual machine disk images)
 
-The current user is added to libvirtd group automatically. Use `sudo usermod -a -G libvirtd <user>` to add other users if necessary (log out and back in).
-Check also that you belong to the kvm group and if not, run `sudo usermod -a -G kvm <user>`.
+TODO required??
+- `qemu-system` (QEMU full system emulation binaries)
+
+Libguestfs
+----------
 
 For libguestfs tools like `virt-cat`, `virt-edit` and `virt-sysprep` to work (on Ubuntu), run the following commands after installing the package.
 For more detailed instructions see [here](http://libguestfs.org/guestfs-faq.1.html#downloading-installing-compiling-libguestfs).
@@ -115,7 +135,7 @@ physically present in the local area network along with the host.
 {% include figure.html id="kvm-virtualization-bridge" url="images/kvm-virtualization-bridge.svg" caption="Network Bridge" description="The bridge binds the virtual NICs (\"taps\") of the VMs to the physical network interface." %}
 
 Check the device name of the primary network interface using `nmcli dev status`.
-The device name in this case is em1 (biosdevname naming for integrated network interfaces).
+The device name may be something like "em1" or "eno1" (biosdevname naming for integrated network interfaces) instead of the familiar "eth0"
 
 > If network manager is in use, you may want to [disable it](http://xmodulo.com/disable-network-manager-linux.html) before continuing (not necessary though).
 > 
@@ -432,7 +452,7 @@ You can use the `--nographics` option to open the guest console directly in the 
 
 ### With VMM (virt-manager)
 
-Launch `virt-manager` or Virtual Machine Manager from system menu on xfce.
+Launch `virt-manager` or Virtual Machine Manager from system menu.
 The tool creates new images in the default storage pool `/var/lib/libvirt/images/` by default.
 
 <ul class="clearing-thumbs small-block-grid-4" data-clearing>
