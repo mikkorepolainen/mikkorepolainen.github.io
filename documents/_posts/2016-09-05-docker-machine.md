@@ -2,7 +2,7 @@
 layout: document
 title: Docker Machine
 description: Using Docker Machine
-modified: 2017-08-02 23:59:00
+modified: 2017-08-03 23:59:00
 relativeroot: ../../
 permalink: documents/docker-machine
 type: document
@@ -266,6 +266,22 @@ You can regenerate the certificates as instructed but if you are accessing the m
 I've observed this happening at least when dropping a VPN connection, then getting resolved by reconnecting to the VPN.
 
 TODO in what circumstances does this happen exactly?
+
+### Azure Configuration
+
+To expose ports to the internet you need to configure the virtual machine firewall and optionally the dns name.
+
+#### Firewall
+
+In Azure portal you can find the settings by clicking the <vm-name>-firewall entry (under the resource group you selected for the VM).
+
+Click on Inbound security rules under settings, then add the ports you need to expose.
+
+#### DNS
+
+In Azure portal you can find the settings by clicking the <vm-name>-ip entry (under the resource group you selected for the VM).
+
+Click Configuration under settings and type a DNS name label at the bottom of the screen (the FQDN of the server becomes `<label>.<azure-region>.cloudapp.azure.com`)
 
 ## Creating a remote VM on AWS
 
