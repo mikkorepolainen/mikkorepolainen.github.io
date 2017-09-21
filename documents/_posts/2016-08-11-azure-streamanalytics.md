@@ -1,6 +1,6 @@
 ---
 layout: document
-title: Azure WebApps
+title: Azure Stream Analytics
 description: Notes about using Azure Stream Analytics
 modified: 2016-08-11 23:59:00
 relativeroot: ../../

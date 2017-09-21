@@ -1,6 +1,6 @@
 ---
 layout: document
-title: Docker Containers
+title: Docker Images
 description: Notes about docker image management with docker tools.
 modified: 2016-05-15 23:59:00
 relativeroot: ../../
@@ -8,7 +8,7 @@ permalink: documents/docker-images
 type: document
 tags:
 - Docker
-- Containers
+- Images
 category: documents
 published: true
 hidden: true

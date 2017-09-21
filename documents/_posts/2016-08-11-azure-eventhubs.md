@@ -1,6 +1,6 @@
 ---
 layout: document
-title: Azure WebApps
+title: Azure Event Hubs
 description: Notes about using Azure Event Hubs
 modified: 2016-08-11 23:59:00
 relativeroot: ../../
