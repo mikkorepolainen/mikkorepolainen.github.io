@@ -102,7 +102,7 @@ At the time of writing, the Kitematic UI only supports the VirtualBox driver and
 
 Alternatively, you can run `docker-machine create --driver <driver name> <vm-name>` on the command line followed by `docker-machine start <vm-name>`.
 
-Read [Docker Hosts]({% post_url 2016-05-15-docker-hosts %}) for information on creating local hosts using docker-machine (e.g. creating a host on Hyper-V instead of VirtualBox on windows).
+Read [Docker Hosts]({% post_url /documents/2016-05-15-docker-hosts %}) for information on creating local hosts using docker-machine (e.g. creating a host on Hyper-V instead of VirtualBox on windows).
 
 Servers
 =====

@@ -13,6 +13,8 @@ figure.highlight {
   border-style: solid;
   border-width: 2px;
   padding: 0.125rem 0.3125rem 0.0625rem;
+  margin-left: 0px;
+  margin-right: 0px;
   margin-bottom: 1.25rem;
   overflow: auto;
   max-height: 50vh;
@@ -47,11 +49,13 @@ blockquote.note
 blockquote.terminal
 {
   padding-top: 0.0rem;
+  /*background: black;*/
 }
 
-blockquote.terminal *
+blockquote.terminal p
 {
   font-family: monospace;
+  /*color: #dddddd;*/
 }
 
 blockquote.indent

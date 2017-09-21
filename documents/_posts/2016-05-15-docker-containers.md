@@ -169,7 +169,7 @@ Docker logs STDIN, STDOUT and STDERR from the container automatically.
 The default logging driver is json-file.
 NOTE This driver will eventually fill the host filesystem with the default options!
 
-For other logging options, see here: [Docker Logging]({% post_url 2016-08-14-docker-logging %}).
+For other logging options, see here: [Docker Logging]({% post_url /documents/2016-08-14-docker-logging %}).
 
 ### Reading log entries
 

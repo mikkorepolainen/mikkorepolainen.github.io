@@ -122,7 +122,7 @@ For more options, refer to the [documentation](https://docs.docker.com/machine/d
 Managing docker hosts on KVM works only locally at the moment since the driver used below does not yet have remote management capabilities.
 
 Using docker-machine with KVM requires a third party driver, e.g.: [docker-machine-kvm](https://github.com/dhiltgen/docker-machine-kvm).
-(For setting up a KVM environment, see [Virtualization With KVM]({% post_url 2015-10-07-virtualization-with-kvm %}).)
+(For setting up a KVM environment, see [Virtualization With KVM]({% post_url /documents/2015-10-07-virtualization-with-kvm %}).)
 
 {% highlight bash %}
 apt-get install libvirt-go
@@ -133,7 +133,7 @@ chmod +x /usr/local/bin/docker-machine-driver-kvm
 Creating a VM: `docker-machine create --driver kvm --kvm-cpu-count 1 --kvm-disk-size 20000 --kvm-memory 1024 <vm-name>`
 
 To expose the VM to the surrounding network by connecting the VM to an existing host bridge, add `--kvm-network <network name>` to the above command, where `network name` is the name of a host bridge added as a virtual network or reconfigure networking after creating the VM.
-See [Virtualization With KVM]({% post_url 2015-10-07-virtualization-with-kvm %}#Bridged_Networking_Create_a_Virtual_Network_Using_the_Existing_Bridge).
+See [Virtualization With KVM]({% post_url /documents/2015-10-07-virtualization-with-kvm %}#Bridged_Networking_Create_a_Virtual_Network_Using_the_Existing_Bridge).
 
 The VM created this way has two network interfaces, one in the docker-machines network and the other on the virtual bridge or the specified network. The `docker-machine ip <vm-name>` command returns the ip address in the docker-machines network.
 To find out the bridged ip address of the VM, use `docker-machine ssh <vm-name> "ip -one -4 addr show dev eth0|cut -f7 -d' '"`

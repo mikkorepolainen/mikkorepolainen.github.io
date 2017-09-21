@@ -36,7 +36,7 @@ If anonymous authentication is enabled, then it will be used by default and no u
 
 At the time of writing, windows authentication only works when the server is hosted on the Windows platform (IIS and WebListener are Windows-only).
 
-Take a look at [ASP.NET Core Hosting]({% post_url 2016-10-29-aspdotnet-core-hosting %}) for setting up either hosting option.
+Take a look at [ASP.NET Core Hosting]({% post_url /documents/2016-10-29-aspdotnet-core-hosting %}) for setting up either hosting option.
 
 Sources:
 

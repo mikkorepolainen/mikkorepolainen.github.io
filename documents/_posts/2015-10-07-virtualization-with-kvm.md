@@ -938,7 +938,7 @@ Related Documents
 
 [Convert VirtualBox Image to KVM Image]: http://blog.bodhizazen.net/linux/convert-virtualbox-vdi-to-kvm-qcow/
 
-[Using xRDP for Remote Desktop Access]: {% post_url 2015-11-01-xrdp %}
+[Using xRDP for Remote Desktop Access]: {% post_url /documents/2015-11-01-xrdp %}
 
 [How to exit virsh]: http://superuser.com/questions/637669/how-to-exit-a-virsh-console-connection
 [Find the IP of a running VM]: https://rwmj.wordpress.com/2010/10/26/tip-find-the-ip-address-of-a-virtual-machine/

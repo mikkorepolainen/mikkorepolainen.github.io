@@ -1,11 +1,10 @@
-gems:
+plugins:
 - jekyll-github-metadata
 - jekyll-mentions
 - jekyll-redirect-from
 - jekyll-sitemap
 - jemoji
 - jekyll-paginate
-- jekyll-paginate-category
 
 whitelist:
 - jekyll-redirect-from

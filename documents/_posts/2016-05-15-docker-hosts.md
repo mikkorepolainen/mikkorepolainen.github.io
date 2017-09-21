@@ -24,7 +24,7 @@ Docker Machine
 Resources:
 
 - [Official documentation](https://docs.docker.com/machine/)
-- [Docker Machine]({% post_url 2016-09-05-docker-machine %})
+- [Docker Machine]({% post_url /documents/2016-09-05-docker-machine %})
 
 Docker Machine can be used to quickly provision virtual machines for use as docker hosts or for controlling existing hosts (using the generic driver).
 There is a selection of drivers available for both local and remote virtualization hosts/providers.
